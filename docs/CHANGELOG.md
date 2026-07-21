@@ -6,6 +6,19 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (8) — Acesso pela rede (bind configurável)
+
+- `run.py`: host/porta/debug via ambiente (`HOST`, `PORT`, `DEBUG`), default
+  seguro `127.0.0.1`. `.env` define `HOST=0.0.0.0` — sistema acessível pela rede
+  em `http://10.0.0.212:5000`. `.env.example` documenta as variáveis.
+- `DEBUG=0` no `.env` exposto (o debugger do Werkzeug permitiria execução de
+  código); reloader fica para dev local (`HOST=127.0.0.1`, `DEBUG=1`).
+- Verificado: escuta em `0.0.0.0:5000`, acessível por IP e por localhost. A
+  interface Ethernet (10.0.0.212) é rede **Private** com firewall desabilitado —
+  máquinas da LAN alcançam sem regra adicional.
+
+---
+
 ## 2026-07-21 (7) — Área administrativa + autenticação (ADR-003, parte 2)
 
 - **Autenticação** ([ADR-003](../ADR-003-identificacao-e-admin.md)): `app/auth.py`

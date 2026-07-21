@@ -87,6 +87,31 @@ copy .env.example .env   # ajustar se necessário
 - Painel do atendente: <http://localhost:5000/atendente?atendente_id=2>
 - Área administrativa: <http://localhost:5000/admin> (via <http://localhost:5000/login>)
 
+### Acesso pela rede
+
+O `.env` usa `HOST=0.0.0.0`, então o sistema responde no IP da máquina —
+ex.: <http://10.0.0.212:5000>. Variáveis (em `.env`):
+
+| Variável | Efeito |
+|----------|--------|
+| `HOST` | `0.0.0.0` = todas as interfaces (rede); `127.0.0.1` = só local |
+| `PORT` | porta HTTP (padrão 5000) |
+| `DEBUG` | `0` recomendado ao expor na rede; `1` liga reloader/debugger (dev local) |
+
+Se outra máquina não alcançar, verifique a categoria da rede
+(`Get-NetConnectionProfile`) e o firewall do perfil correspondente. Numa rede
+**Private** com firewall desativado, o acesso funciona sem regra extra; num perfil
+**Public** ativo, é preciso liberar a porta 5000 (com privilégio de admin):
+
+```powershell
+# Executar como administrador — libera a porta 5000 para entrada
+New-NetFirewallRule -DisplayName "Alo Saude 5000" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5000
+```
+
+> Segurança: o servidor Flask de desenvolvimento não é hardened para produção.
+> Para uso além de demo/rede interna, servir atrás de gunicorn/uwsgi + proxy
+> reverso (nginx) com HTTPS e `SECRET_KEY` forte.
+
 ## Troubleshooting
 
 - **`ModuleNotFoundError: No module named 'psycopg2'` no boot** — o
