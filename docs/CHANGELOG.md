@@ -6,6 +6,18 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (4) — Versionamento (git) e consistência de dependências
+
+- Repositório git inicializado (branch `main`, commit inicial). `.gitignore`
+  protege `.env` e `dataset/` (PII) — confirmado fora do controle de versão.
+- `requirements.txt`: `psycopg2-binary` `2.9.9 → 2.9.12` (2.9.9 não tem wheel
+  para Python 3.14); `Werkzeug==3.1.8` fixado (versão puxada pelo Flask 2.3.3 e
+  validada em runtime).
+- `.gitattributes` adicionado: normaliza fim de linha para LF e marca binários,
+  eliminando os avisos CRLF↔LF no Windows.
+
+---
+
 ## 2026-07-21 (3) — ADR-002: evolução do motor de NLP
 
 - Criado [ADR-002](../ADR-002-evolucao-motor-nlp.md), que refina a Decisão A do

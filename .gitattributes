@@ -1,0 +1,22 @@
+# Normalização de fim de linha — repositório e working tree em LF.
+# Evita ruído CRLF<->LF entre Windows e outros SOs (docs as code cross-platform).
+* text=auto eol=lf
+
+# Arquivos de texto explícitos (garantia)
+*.py    text eol=lf
+*.md    text eol=lf
+*.sql   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.txt   text eol=lf
+*.json  text eol=lf
+*.env*  text eol=lf
+
+# Binários — nunca converter nem diferenciar
+*.odt   binary
+*.jpg   binary
+*.jpeg  binary
+*.png   binary
+*.pdf   binary
+*.zip   binary
