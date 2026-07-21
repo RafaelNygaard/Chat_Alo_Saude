@@ -6,6 +6,26 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (7) — Área administrativa + autenticação (ADR-003, parte 2)
+
+- **Autenticação** ([ADR-003](../ADR-003-identificacao-e-admin.md)): `app/auth.py`
+  (decorators `login_required`/`admin_required`), `app/api/auth.py`
+  (`/api/login`, `/api/logout`, `/api/sessao`) via sessão Flask + hash Werkzeug;
+  `manage.py create-admin`/`set-senha`; página `/login`.
+- **Console administrativo** (`/admin`, protegido): `app/api/admin.py` +
+  `templates/admin.html` + `static/js/admin.js`. Módulos: cadastros (funções,
+  UBS, usuários), relatórios (por status/unidade/função + handoffs, **CSV**),
+  gestão do bot (intents e tópicos críticos) e disponibilidade de atendentes.
+- **Testes**: `tests/test_admin_auth.py` (identificação find-or-create, login,
+  proteção admin) em SQLite in-memory — 33 testes no total, CI verde.
+- Validado no navegador: login, relatórios agregados, cadastros; API admin
+  retorna 401 sem sessão e `/admin` redireciona para `/login`.
+- Correção: agregações por unidade/função ancoradas em `Conversa`
+  (`select_from`) — evitava `conversas` fora do FROM.
+- Docs: [guia-admin.md](guia-admin.md) adicionado.
+
+---
+
 ## 2026-07-21 (6) — Popup de identificação do servidor (ADR-003, parte 1)
 
 - **Schema** (migration `db/migrations/002_identificacao_e_admin.sql` + `schema.sql`

@@ -39,7 +39,12 @@ $env:PGPASSWORD='postgres'; $psql='C:\Program Files\PostgreSQL\17\bin\psql.exe'
 $env:PGPASSWORD='senha'
 & $psql -U alosaude -h localhost -d alosaude -f db\schema.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\seed_intents.sql
+# Migrations incrementais (após o schema base):
+& $psql -U alosaude -h localhost -d alosaude -f db\migrations\002_identificacao_e_admin.sql
 ```
+
+> Nota: `schema.sql` já inclui a tabela `funcoes` e as colunas novas de
+> `usuarios`. A migration 002 é para bancos criados antes do ADR-003 (idempotente).
 
 ### Usuários seed (necessários para o MVP sem autenticação)
 
@@ -66,14 +71,21 @@ copy .env.example .env   # ajustar se necessário
 | `DATABASE_URL` | `postgresql+psycopg2://alosaude:senha@localhost:5432/alosaude` | Conexão |
 | `HANDOFF_LIMIAR_CONFIANCA` | `0.30` | Limiar de confiança do handoff (ver treino do NLP) |
 
-## 3. Executar
+## 3. Criar um administrador (área admin — ADR-003)
+
+```powershell
+.\.venv\Scripts\python.exe manage.py create-admin --nome "Admin" --email admin@pmpc.sp.gov.br --senha "SENHA_FORTE"
+```
+
+## 4. Executar
 
 ```powershell
 .\.venv\Scripts\python.exe run.py
 ```
 
-- Chat do enfermeiro: <http://localhost:5000/?usuario_id=1>
+- Chat (identificação via popup): <http://localhost:5000/>
 - Painel do atendente: <http://localhost:5000/atendente?atendente_id=2>
+- Área administrativa: <http://localhost:5000/admin> (via <http://localhost:5000/login>)
 
 ## Troubleshooting
 

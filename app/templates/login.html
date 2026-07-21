@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alô Saúde — Acesso administrativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <div class="barra-gov">
+    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Sistema Alô Saúde</span>
+  </div>
+
+  <div class="login-tela">
+    <form class="login-card" id="form-login">
+      <div class="marca">
+        <div class="logo-icone" aria-hidden="true">+</div>
+        <div>
+          <div class="titulo"><strong>Alô Saúde</strong></div>
+          <div class="subtitulo">Acesso administrativo</div>
+        </div>
+      </div>
+      <label>E-mail ou matrícula
+        <input id="login-id" type="text" required autocomplete="username">
+      </label>
+      <label>Senha
+        <input id="login-senha" type="password" required autocomplete="current-password">
+      </label>
+      <p class="modal-erro" id="login-erro" role="alert" hidden></p>
+      <button class="btn" type="submit">Entrar</button>
+      <a class="login-voltar" href="/">← Voltar ao chat</a>
+    </form>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
+  <script>
+    'use strict';
+    const proximo = new URLSearchParams(location.search).get('next') || '/admin';
+    document.getElementById('form-login').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const erro = document.getElementById('login-erro');
+      erro.hidden = true;
+      try {
+        await api.post('/api/login', {
+          identificador: document.getElementById('login-id').value.trim(),
+          senha: document.getElementById('login-senha').value,
+        });
+        location.href = proximo;
+      } catch (e) {
+        erro.textContent = 'Credenciais inválidas ou sem acesso ao painel.';
+        erro.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>

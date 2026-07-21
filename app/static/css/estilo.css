@@ -113,6 +113,68 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
 .modal-acoes { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .4rem; }
 @media (max-width: 480px) { .modal .linha-campos { flex-direction: column; gap: 0; } }
 
+/* -------- Login -------- */
+.login-tela { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-card {
+  background: var(--branco); border-radius: 12px; padding: 2rem;
+  width: 100%; max-width: 380px; box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.login-card .marca { display: flex; align-items: center; gap: .8rem; margin-bottom: .4rem; }
+.login-card label { font-size: .82rem; font-weight: 600; color: var(--azul-escuro); }
+.login-card input {
+  width: 100%; margin-top: .3rem; padding: .6rem .7rem;
+  border: 1px solid var(--cinza-borda); border-radius: 6px; font: inherit;
+}
+.login-card input:focus { outline: 2px solid var(--azul-govbr); border-color: var(--azul-govbr); }
+.login-voltar { text-align: center; font-size: .82rem; color: var(--azul-govbr); text-decoration: none; }
+.login-voltar:hover { text-decoration: underline; }
+
+/* -------- Área administrativa -------- */
+.admin-corpo { flex: 1; display: flex; min-height: 0; }
+.admin-nav {
+  width: 230px; background: var(--branco); border-right: 1px solid var(--cinza-borda);
+  padding: 1rem 0; overflow-y: auto;
+}
+.admin-nav .grupo { font-size: .72rem; font-weight: 700; color: var(--cinza-texto);
+  text-transform: uppercase; padding: .8rem 1.2rem .3rem; }
+.admin-nav button {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  padding: .55rem 1.2rem; font: inherit; font-size: .9rem; color: var(--texto); cursor: pointer;
+}
+.admin-nav button:hover { background: var(--cinza-claro); }
+.admin-nav button.ativa { background: var(--azul-claro); color: var(--azul-govbr); font-weight: 600;
+  border-left: 3px solid var(--azul-govbr); }
+.admin-main { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
+.admin-main h2.titulo { color: var(--azul-escuro); margin-bottom: 1rem; }
+
+.cards { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.card {
+  background: var(--branco); border: 1px solid var(--cinza-borda); border-radius: 10px;
+  padding: 1rem 1.3rem; min-width: 140px;
+}
+.card .valor { font-family: "Outfit", sans-serif; font-size: 1.8rem; color: var(--azul-govbr); font-weight: 700; }
+.card .rotulo { font-size: .8rem; color: var(--cinza-texto); }
+
+table.grade { width: 100%; border-collapse: collapse; background: var(--branco);
+  border: 1px solid var(--cinza-borda); border-radius: 8px; overflow: hidden; }
+table.grade th, table.grade td { padding: .6rem .8rem; text-align: left; font-size: .88rem;
+  border-bottom: 1px solid var(--cinza-borda); }
+table.grade th { background: var(--cinza-claro); font-weight: 600; color: var(--azul-escuro); }
+table.grade tr:last-child td { border-bottom: none; }
+table.grade input, table.grade select { padding: .35rem .5rem; border: 1px solid var(--cinza-borda);
+  border-radius: 5px; font: inherit; font-size: .85rem; }
+
+.admin-toolbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: end; margin-bottom: 1rem; }
+.admin-toolbar label { font-size: .78rem; font-weight: 600; color: var(--azul-escuro); display: flex;
+  flex-direction: column; gap: .2rem; }
+.admin-toolbar input, .admin-toolbar select { padding: .4rem .5rem; border: 1px solid var(--cinza-borda);
+  border-radius: 5px; font: inherit; }
+.btn.mini { padding: .35rem .7rem; font-size: .82rem; }
+.pilula { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+.pilula.sim { background: var(--verde-claro); color: var(--verde); }
+.pilula.nao { background: #f0f0f0; color: #888; }
+
 /* Layout principal */
 .principal { flex: 1; display: flex; min-height: 0; }
 

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alô Saúde — Área administrativa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <div class="barra-gov">
+    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Área administrativa</span>
+    <span>
+      <button type="button" id="btn-contraste" aria-pressed="false">Alto Contraste</button>
+    </span>
+  </div>
+
+  <header class="cabecalho">
+    <div class="marca">
+      <div class="logo-icone" aria-hidden="true">+</div>
+      <div>
+        <div class="titulo"><strong>Alô Saúde</strong></div>
+        <div class="subtitulo">Console técnico-administrativo</div>
+      </div>
+    </div>
+    <div class="identidade">
+      <strong id="admin-nome"></strong>
+      <span><a href="#" id="btn-sair" style="color:#fff">Sair</a></span>
+    </div>
+  </header>
+
+  <div class="admin-corpo">
+    <nav class="admin-nav" aria-label="Seções">
+      <div class="grupo">Visão geral</div>
+      <button data-secao="relatorios" class="ativa">Relatórios</button>
+      <div class="grupo">Cadastros</div>
+      <button data-secao="servidores">Servidores</button>
+      <button data-secao="funcoes">Funções</button>
+      <button data-secao="unidades">Unidades de saúde</button>
+      <div class="grupo">Bot</div>
+      <button data-secao="intents">Intents (FAQ)</button>
+      <button data-secao="topicos">Tópicos críticos</button>
+      <div class="grupo">Operação</div>
+      <button data-secao="atendentes">Atendentes</button>
+    </nav>
+
+    <main class="admin-main" id="admin-main" aria-live="polite"></main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

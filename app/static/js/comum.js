@@ -7,13 +7,16 @@ const api = {
     if (!r.ok) throw new Error(`GET ${url}: ${r.status}`);
     return r.json();
   },
-  async post(url, corpo) {
+  async post(url, corpo) { return this._enviar('POST', url, corpo); },
+  async put(url, corpo) { return this._enviar('PUT', url, corpo); },
+  async del(url) { return this._enviar('DELETE', url); },
+  async _enviar(metodo, url, corpo) {
     const r = await fetch(url, {
-      method: 'POST',
+      method: metodo,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpo ?? {}),
+      body: corpo === undefined ? undefined : JSON.stringify(corpo ?? {}),
     });
-    if (!r.ok) throw new Error(`POST ${url}: ${r.status}`);
+    if (!r.ok) throw new Error(`${metodo} ${url}: ${r.status}`);
     return r.json();
   },
 };

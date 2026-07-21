@@ -24,5 +24,7 @@ registro documental correspondente foi feito.
 | [CHANGELOG.md](CHANGELOG.md) | Histórico cronológico de mudanças (código, schema, infra) |
 | [runbook-ambiente-local.md](runbook-ambiente-local.md) | Subir o ambiente de desenvolvimento (Postgres, venv, `.env`, executar) |
 | [treinamento-motor-nlp.md](treinamento-motor-nlp.md) | Como "treinar" o motor A1: curar intents, de-identificar, avaliar |
+| [guia-admin.md](guia-admin.md) | Área administrativa: acesso, módulos, papéis |
 | [ADR-001](../ADR-001-chatbot-alo-saude.md) | Decisão de arquitetura fundadora do projeto |
 | [ADR-002](../ADR-002-evolucao-motor-nlp.md) | Evolução do motor NLP: A1 insuficiente (evidência), priorizar A3 |
+| [ADR-003](../ADR-003-identificacao-e-admin.md) | Identificação do servidor + área administrativa com autenticação |
