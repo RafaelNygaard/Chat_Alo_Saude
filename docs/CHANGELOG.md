@@ -6,6 +6,17 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (5) — Publicação no GitHub e CI
+
+- Repositório publicado em <https://github.com/RafaelNygaard/Chat_Alo_Saude>
+  (remote `origin`, branch `main`).
+- **CI (GitHub Actions)** `.github/workflows/ci.yml`: roda `pytest` a cada push
+  e pull request na `main` (Python 3.12; testes usam SQLite in-memory, sem
+  Postgres). 23 testes validados localmente antes de publicar.
+- Badge de status do CI adicionado ao `README.md`.
+
+---
+
 ## 2026-07-21 (4) — Versionamento (git) e consistência de dependências
 
 - Repositório git inicializado (branch `main`, commit inicial). `.gitignore`

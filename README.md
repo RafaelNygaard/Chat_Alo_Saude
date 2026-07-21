@@ -1,5 +1,7 @@
 # Chatbot UBS ↔ Alô Saúde
 
+[![CI](https://github.com/RafaelNygaard/Chat_Alo_Saude/actions/workflows/ci.yml/badge.svg)](https://github.com/RafaelNygaard/Chat_Alo_Saude/actions/workflows/ci.yml)
+
 Implementação do [ADR-001](ADR-001-chatbot-alo-saude.md). Fundação do MVP: itens de ação 3, 6 e 7.
 
 ## Documentação (docs as code)
