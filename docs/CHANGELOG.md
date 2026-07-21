@@ -1,0 +1,96 @@
+# Changelog
+
+Registro cronológico de mudanças (mais recente primeiro). Formato inspirado em
+[Keep a Changelog](https://keepachangelog.com/pt-BR/). Cada entrada referencia os
+arquivos afetados. Datas em `AAAA-MM-DD`.
+
+---
+
+## 2026-07-21 (3) — ADR-002: evolução do motor de NLP
+
+- Criado [ADR-002](../ADR-002-evolucao-motor-nlp.md), que refina a Decisão A do
+  ADR-001 com a evidência do harness: A1 generaliza mal → **A3 (LLM) priorizado**
+  (com A1 como roteador seguro interino; A2/Rasa como fallback), condicionado à
+  anonimização (item 4) e ao jurídico (itens 1–2). Inclui critérios de aceitação
+  medidos pelo mesmo harness.
+- Ponteiro adicionado na Decisão A do ADR-001; ADR-002 indexado em `docs/README.md`.
+
+---
+
+## 2026-07-21 (2) — Avaliação held-out realista do motor A1
+
+- `eval/casos.py` ampliado para **46 casos** (34 in-scope *held-out* com
+  vocabulário distinto dos padrões + 12 negativos, incluindo ruído de
+  coordenação interna do grupo).
+- `eval/run_eval.py`: adicionado **relatório de ponto de operação** no limiar de
+  produção (resposta certa / errada / handoff; falsos positivos) e correção de
+  encoding para console Windows (UTF-8 + marcadores ASCII).
+- **Resultado honesto:** acurácia top-1 cai de 100% (autoria) para **64,7%**
+  (held-out); confianças comprimidas em 0,09–0,35. No limiar 0,30 o bot responde
+  ~9% e escala ~91% (0 erros). Evidência de que o A1 generaliza mal → embasa a
+  evolução para A2/A3. Análise completa em
+  [treinamento-motor-nlp.md](treinamento-motor-nlp.md).
+- Justificativa do `HANDOFF_LIMIAR_CONFIANCA` no `.env` corrigida (a anterior,
+  baseada no conjunto de autoria, era otimista).
+
+---
+
+## 2026-07-21 — Treino do motor A1 + ambiente local de desenvolvimento
+
+### Infraestrutura
+- **PostgreSQL 17** instalado localmente via `winget` (não havia Postgres nem
+  Docker na máquina). Serviço `postgresql-x64-17` na porta 5432.
+- Criados role e banco `alosaude`; schema aplicado; usuários seed inseridos
+  (enfermeiro `id=1`, atendente `id=2`). Passo a passo em
+  [runbook-ambiente-local.md](runbook-ambiente-local.md).
+
+### NLP — "treinamento" do motor de regras (A1)
+- **Novos intents** derivados do corpus real de WhatsApp, **de-identificados**
+  (sem PII). Arquivo `db/seed_intents.sql` (upsert idempotente sobre
+  `faq_intents`, total de 14 intents). Intents adicionados:
+  `localizar_esf_por_endereco`, `lotacao_paciente`, `especialista_atende_sus`,
+  `agendamento_especialista`, `sala_vacina_campanha`,
+  `aplicacao_medicamento_psf`, `pedido_exame`, `visita_medica_domiciliar`;
+  `notificacao_compulsoria` ampliado com o fluxo VEPI.
+- **Harness de avaliação** `eval/run_eval.py` + conjunto rotulado
+  `eval/casos.py`: mede acurácia top-1 e faz *sweep* do limiar de confiança.
+  Detalhes e resultados em [treinamento-motor-nlp.md](treinamento-motor-nlp.md).
+
+### Configuração / correções
+- `run.py`: passou a chamar `load_dotenv()` — o `.env` não era carregado antes
+  (bug latente; a config só lia `os.environ`).
+- `app/db.py`: `init_db` agora tolera banco/driver indisponível na inicialização
+  (loga aviso em vez de derrubar o boot) — permite ver as telas sem Postgres.
+- `.env` criado com `HANDOFF_LIMIAR_CONFIANCA=0.30` (reduzido de `0.60`
+  conforme o *sweep* do harness — em 0.60 a cobertura caía para 63%).
+- `.claude/launch.json` adicionado para subir o servidor de desenvolvimento.
+
+### Pendências conhecidas / dívida
+- Role `alosaude` recebeu **SUPERUSER** apenas para `CREATE EXTENSION` no dev
+  local; **rever para produção** (privilégio mínimo).
+- Acurácia de 100% no harness é otimista (frases de teste espelham os padrões);
+  falta conjunto *held-out* e mais casos negativos.
+- Corpus WhatsApp permanece **bloqueado** para uso além de padrões
+  de-identificados até os itens 1, 2 e 4 do ADR-001 (jurídico/DPO/anonimização).
+
+---
+
+## Baseline — Fundação do MVP (ADR-001, itens de ação 3, 6 e 7)
+
+Estado do repositório antes desta sessão (documentado retroativamente ao adotar
+docs as code). Implementação inicial conforme [ADR-001](../ADR-001-chatbot-alo-saude.md):
+
+- **App factory Flask** (`app/__init__.py`, `app/config.py`) e sessão SQLAlchemy
+  (`app/db.py`).
+- **Schema PostgreSQL** (`db/schema.sql`): 10 tabelas do ADR + `topicos_criticos`,
+  extensões `pg_trgm`/`unaccent`, função `gerar_protocolo()` e seeds iniciais de
+  intents (derivados do mockup).
+- **Camada NLP plugável** (Decisão A): interface `NLPEngine` (`app/nlp/engine.py`),
+  implementação `RulesEngine` A1 com similaridade por trigramas
+  (`app/nlp/rules_engine.py`) e normalização (`app/nlp/preprocess.py`).
+- **Orquestrador + handoff** (Decisão B): `app/orchestrator/` com gatilhos de
+  escalonamento (pedido explícito, baixa confiança, tópico crítico).
+- **API** (`app/api/chat.py`, `app/api/atendente.py`) com stream SSE (Decisão C).
+- **Frontend** (mesma stack HTML/CSS/JS): telas de chat e painel do atendente,
+  identidade gov.br, VLibras.
+- **Testes** sem banco (fakes) em `tests/`.

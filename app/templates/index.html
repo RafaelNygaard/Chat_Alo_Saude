@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alô Saúde — Central de Apoio à Atenção Básica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <!-- Barra gov.br -->
+  <div class="barra-gov">
+    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Sistema Alô Saúde</span>
+    <span>
+      <button type="button" onclick="window.vlibrasAtivar && vlibrasAtivar()">VLibras</button>
+      <button type="button" id="btn-contraste" aria-pressed="false">Alto Contraste</button>
+    </span>
+  </div>
+
+  <!-- Cabeçalho -->
+  <header class="cabecalho">
+    <div class="marca">
+      <div class="logo-icone" aria-hidden="true">+</div>
+      <div>
+        <div class="titulo"><strong>Alô Saúde</strong></div>
+        <div class="subtitulo">Central de Apoio à Atenção Básica</div>
+      </div>
+    </div>
+    <div class="identidade" id="identidade">
+      <strong id="usuario-nome">Enfermeiro(a)</strong>
+      <span id="usuario-ubs"></span>
+    </div>
+  </header>
+
+  <div class="principal">
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Meus atendimentos">
+      <div class="acoes">
+        <input class="busca" id="busca" type="search" placeholder="Buscar atendimentos..." aria-label="Buscar atendimentos">
+        <button class="btn" id="btn-novo">&#128172; Novo Atendimento</button>
+      </div>
+      <div class="rotulo">MEUS ATENDIMENTOS</div>
+      <ul class="lista-conversas" id="lista-conversas"></ul>
+    </aside>
+
+    <!-- Chat -->
+    <main class="chat" aria-live="polite">
+      <div class="chat-cabecalho" id="chat-cabecalho" hidden>
+        <div class="linha">
+          <h2 class="titulo" id="chat-assunto"></h2>
+          <span class="badge" id="chat-badge"></span>
+          <button class="btn secundario" id="btn-encerrar" style="margin-left:auto">Encerrar</button>
+        </div>
+        <div class="protocolo" id="chat-protocolo"></div>
+      </div>
+
+      <div class="mensagens" id="mensagens">
+        <div class="vazio" id="vazio">
+          <h3 class="titulo">Bem-vindo(a) ao Alô Saúde</h3>
+          <p>Selecione um atendimento ou inicie um novo.</p>
+        </div>
+      </div>
+
+      <div class="chips" id="chips" hidden></div>
+
+      <form class="entrada" id="form-entrada" hidden>
+        <textarea id="campo-texto" placeholder="Digite sua mensagem... (Enter para enviar)"
+                  aria-label="Mensagem"></textarea>
+        <button class="btn" type="submit" aria-label="Enviar">&#10148;</button>
+      </form>
+
+      <div class="rodape">
+        <span>Comunicação protegida · LGPD · RNDS</span>
+        <span>Shift+Enter para nova linha</span>
+      </div>
+    </main>
+  </div>
+
+  <!-- VLibras (acessibilidade) -->
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script>
+    if (window.VLibras) { new window.VLibras.Widget('https://vlibras.gov.br/app'); }
+  </script>
+
+  <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

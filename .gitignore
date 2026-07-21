@@ -1,0 +1,33 @@
+# ============================================================
+# LGPD / segredos — NUNCA versionar
+# ============================================================
+# Segredos e config local (usar .env.example como template)
+.env
+.env.*
+!.env.example
+
+# Corpus com PII real (nomes, CPF, CNS, telefones). Ver ADR-001 itens 1,2,4.
+# Não pode entrar no controle de versão. Distribuir fora do repo, com base legal.
+dataset/
+
+# ============================================================
+# Python
+# ============================================================
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ============================================================
+# Ferramentas / IDE / SO
+# ============================================================
+.claude/settings.local.json
+.idea/
+.vscode/
+*.log
+Thumbs.db
+desktop.ini

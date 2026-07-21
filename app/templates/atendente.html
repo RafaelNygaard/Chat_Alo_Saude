@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Atendente — Alô Saúde</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <div class="barra-gov">
+    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Sistema Alô Saúde — Painel do Atendente</span>
+    <span><button type="button" id="btn-contraste" aria-pressed="false">Alto Contraste</button></span>
+  </div>
+
+  <header class="cabecalho">
+    <div class="marca">
+      <div class="logo-icone" aria-hidden="true">+</div>
+      <div>
+        <div class="titulo"><strong>Alô Saúde</strong></div>
+        <div class="subtitulo">Painel do Atendente</div>
+      </div>
+    </div>
+    <div class="identidade">
+      <strong id="atendente-nome">Atendente</strong>
+      <span id="atendente-info"></span>
+    </div>
+  </header>
+
+  <div class="principal">
+    <aside class="sidebar" aria-label="Fila e atendimentos">
+      <div class="painel-status">
+        <label for="sel-status" class="rotulo" style="padding:0">MINHA DISPONIBILIDADE</label>
+        <select id="sel-status">
+          <option value="disponivel">Disponível</option>
+          <option value="ocupado">Ocupado</option>
+          <option value="ausente" selected>Ausente</option>
+        </select>
+      </div>
+      <div class="rotulo">FILA DE ESPERA</div>
+      <ul class="lista-conversas" id="lista-fila"></ul>
+      <div class="rotulo">MEUS ATENDIMENTOS</div>
+      <ul class="lista-conversas" id="lista-minhas"></ul>
+    </aside>
+
+    <main class="chat" aria-live="polite">
+      <div class="chat-cabecalho" id="chat-cabecalho" hidden>
+        <div class="linha">
+          <h2 class="titulo" id="chat-assunto"></h2>
+          <span class="badge" id="chat-badge"></span>
+          <button class="btn secundario" id="btn-encerrar" style="margin-left:auto">Encerrar</button>
+        </div>
+        <div class="protocolo" id="chat-protocolo"></div>
+      </div>
+
+      <div class="mensagens" id="mensagens">
+        <div class="vazio" id="vazio">
+          <h3 class="titulo">Painel do Atendente</h3>
+          <p>Fique &quot;Disponível&quot; para receber conversas ou assuma uma da fila.</p>
+        </div>
+      </div>
+
+      <form class="entrada" id="form-entrada" hidden>
+        <textarea id="campo-texto" placeholder="Responder ao enfermeiro... (Enter para enviar)"
+                  aria-label="Resposta"></textarea>
+        <button class="btn" type="submit" aria-label="Enviar">&#10148;</button>
+      </form>
+
+      <div class="rodape">
+        <span>Comunicação protegida · LGPD · RNDS</span>
+        <span>Shift+Enter para nova linha</span>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/atendente.js') }}"></script>
+</body>
+</html>
