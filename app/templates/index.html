@@ -28,10 +28,45 @@
       </div>
     </div>
     <div class="identidade" id="identidade">
-      <strong id="usuario-nome">Enfermeiro(a)</strong>
+      <strong id="usuario-nome">Não identificado</strong>
       <span id="usuario-ubs"></span>
     </div>
   </header>
+
+  <!-- Modal de identificação do servidor (ADR-003) -->
+  <div class="modal-overlay" id="modal-identificacao" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <h2 class="titulo" id="modal-titulo">Identifique-se para iniciar o atendimento</h2>
+      <p class="modal-sub">Seus dados agilizam o retorno da equipe Alô Saúde.</p>
+      <form id="form-identificacao">
+        <label>Nome completo
+          <input id="id-nome" type="text" required autocomplete="name" maxlength="120">
+        </label>
+        <label>E-mail
+          <input id="id-email" type="email" required autocomplete="email" maxlength="120">
+        </label>
+        <label>Matrícula
+          <input id="id-matricula" type="text" required maxlength="40">
+        </label>
+        <div class="linha-campos">
+          <label>Função
+            <select id="id-funcao" required></select>
+          </label>
+          <label>Unidade de saúde
+            <select id="id-ubs" required></select>
+          </label>
+        </div>
+        <label>Assunto do atendimento
+          <input id="id-assunto" type="text" placeholder="Opcional" maxlength="120">
+        </label>
+        <p class="modal-erro" id="id-erro" role="alert" hidden></p>
+        <div class="modal-acoes">
+          <button type="button" class="btn secundario" id="id-cancelar">Cancelar</button>
+          <button type="submit" class="btn">Iniciar atendimento</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="principal">
     <!-- Sidebar -->

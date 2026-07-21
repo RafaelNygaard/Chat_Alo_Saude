@@ -5,9 +5,44 @@ from sqlalchemy import text
 
 from app.db import Session
 from app.models import (
-    AtendenteStatus, Conversa, FaqIntent, Handoff, Mensagem, TopicoCritico,
+    AtendenteStatus, Conversa, FaqIntent, Funcao, Handoff, Mensagem,
+    TopicoCritico, UBS, Usuario,
 )
 from app.nlp.rules_engine import IntentDef
+
+
+# ------------------------------------------------------------- identificação
+def listar_funcoes() -> list[dict]:
+    rows = Session.query(Funcao).filter_by(ativo=True).order_by(Funcao.nome).all()
+    return [{"id": f.id, "nome": f.nome} for f in rows]
+
+
+def listar_ubs() -> list[dict]:
+    rows = Session.query(UBS).order_by(UBS.nome).all()
+    return [{"id": u.id, "nome": u.nome, "municipio": u.municipio} for u in rows]
+
+
+def identificar_servidor(nome: str, email: str, matricula: str,
+                         funcao_id: int, ubs_id: int) -> Usuario:
+    """Find-or-create do servidor pela matrícula (chave natural); atualiza dados.
+
+    Não rebaixa o papel de um usuário que já seja atendente/admin.
+    """
+    u = Session.query(Usuario).filter_by(matricula=matricula).first()
+    if u is None and email:
+        u = Session.query(Usuario).filter_by(email=email).first()
+    if u is None:
+        u = Usuario(papel="servidor")
+        Session.add(u)
+    u.nome = nome
+    u.email = email or u.email
+    u.matricula = matricula or u.matricula
+    u.funcao_id = funcao_id
+    u.ubs_id = ubs_id
+    if u.papel not in ("atendente", "admin"):
+        u.papel = "servidor"
+    Session.commit()
+    return u
 
 
 def carregar_intents() -> list[IntentDef]:

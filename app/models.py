@@ -17,15 +17,28 @@ class UBS(Base):
     municipio = Column(Text, nullable=False)
 
 
+class Funcao(Base):
+    __tablename__ = "funcoes"
+    id = Column(Integer, primary_key=True)
+    nome = Column(Text, nullable=False, unique=True)
+    ativo = Column(Boolean, nullable=False, default=True)
+
+
 class Usuario(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True)
     nome = Column(Text, nullable=False)
+    email = Column(Text)
     cns = Column(Text, unique=True)  # validado no DDL: ^[0-9]{15}$
     matricula = Column(Text, unique=True)
     ubs_id = Column(Integer, ForeignKey("ubs.id"))
-    papel = Column(Text, nullable=False)  # enfermeiro | atendente | admin
+    funcao_id = Column(Integer, ForeignKey("funcoes.id"))
+    papel = Column(Text, nullable=False)  # servidor | enfermeiro | atendente | admin
+    senha_hash = Column(Text)  # apenas para papéis com login (admin/atendente)
     criado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    ubs = relationship("UBS")
+    funcao = relationship("Funcao")
 
 
 class Conversa(Base):

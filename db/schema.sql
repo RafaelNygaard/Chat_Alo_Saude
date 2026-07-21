@@ -17,16 +17,34 @@ CREATE TABLE ubs (
 );
 
 -- ---------------------------------------------------------------
--- 2. usuarios  (enfermeiros, atendentes, admins)
+-- 2b. funcoes  (função do servidor; combo do popup, gerenciável no admin — ADR-003)
+-- ---------------------------------------------------------------
+CREATE TABLE funcoes (
+    id    SERIAL PRIMARY KEY,
+    nome  TEXT NOT NULL UNIQUE,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+INSERT INTO funcoes (nome) VALUES
+    ('Enfermeiro(a)'), ('Técnico(a) de Enfermagem'), ('Agente Comunitário de Saúde'),
+    ('Médico(a)'), ('Coordenador(a) de Unidade'), ('Farmacêutico(a)'),
+    ('Cirurgião(ã)-Dentista'), ('Assistente Social');
+
+-- ---------------------------------------------------------------
+-- 2. usuarios  (servidores, enfermeiros, atendentes, admins)
 -- CNS em campo estruturado com validação (item de ação 10)
+-- email/funcao_id: identificação pelo popup; senha_hash: login (admin) — ADR-003
 -- ---------------------------------------------------------------
 CREATE TABLE usuarios (
     id          SERIAL PRIMARY KEY,
     nome        TEXT NOT NULL,
+    email       TEXT,
     cns         CHAR(15) UNIQUE CHECK (cns ~ '^[0-9]{15}$'),
     matricula   TEXT UNIQUE,
     ubs_id      INTEGER REFERENCES ubs(id),
-    papel       TEXT NOT NULL CHECK (papel IN ('enfermeiro', 'atendente', 'admin')),
+    funcao_id   INTEGER REFERENCES funcoes(id),
+    papel       TEXT NOT NULL CHECK (papel IN ('servidor', 'enfermeiro', 'atendente', 'admin')),
+    senha_hash  TEXT,
     criado_em   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

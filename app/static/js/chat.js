@@ -1,8 +1,8 @@
 // Chat do enfermeiro — ES6 + Fetch API + SSE. Sem frameworks (ADR-001).
 'use strict';
 
-// MVP sem autenticação: usuário via ?usuario_id= (padrão 1). Item futuro: login.
-const USUARIO_ID = Number(new URLSearchParams(location.search).get('usuario_id') || 1);
+// Identidade do servidor (ADR-003): coletada no popup e persistida entre atendimentos.
+let servidor = carregarServidor();  // {usuario_id, nome, email, matricula, funcao_id, ubs_id} | null
 
 const el = (id) => document.getElementById(id);
 const listaEl = el('lista-conversas');
@@ -12,10 +12,24 @@ let conversaAtual = null;      // {id, protocolo, assunto, status_ui}
 let stream = null;
 const afterRef = { valor: 0 };
 
+// -------------------------------------------------------------- identidade
+
+function carregarServidor() {
+  try { return JSON.parse(localStorage.getItem('servidor')) || null; }
+  catch { return null; }
+}
+function salvarServidor(s) { localStorage.setItem('servidor', JSON.stringify(s)); servidor = s; }
+
+function atualizarIdentidade() {
+  el('usuario-nome').textContent = servidor ? servidor.nome : 'Não identificado';
+  el('usuario-ubs').textContent = servidor?.ubs_nome || '';
+}
+
 // ---------------------------------------------------------------- sidebar
 
 async function carregarConversas(filtro = '') {
-  const conversas = await api.get(`/api/conversas?usuario_id=${USUARIO_ID}`);
+  if (!servidor) { listaEl.innerHTML = ''; return; }
+  const conversas = await api.get(`/api/conversas?usuario_id=${servidor.usuario_id}`);
   listaEl.innerHTML = '';
   conversas
     .filter((c) => !filtro || (c.assunto || '').toLowerCase().includes(filtro) || c.protocolo.toLowerCase().includes(filtro))
@@ -134,15 +148,72 @@ async function carregarChips() {
   });
 }
 
+// -------------------------------------------------------- modal identificação
+
+let combosCarregados = false;
+
+async function carregarCombos() {
+  if (combosCarregados) return;
+  const [funcoes, ubs] = await Promise.all([api.get('/api/funcoes'), api.get('/api/ubs')]);
+  const opts = (arr, ph) => `<option value="" disabled selected>${ph}</option>` +
+    arr.map((o) => `<option value="${o.id}">${o.nome}</option>`).join('');
+  el('id-funcao').innerHTML = opts(funcoes, 'Selecione a função...');
+  el('id-ubs').innerHTML = opts(ubs, 'Selecione a unidade...');
+  combosCarregados = true;
+}
+
+async function abrirModal() {
+  el('id-erro').hidden = true;
+  await carregarCombos();
+  if (servidor) {  // pré-preenche com a última identidade
+    el('id-nome').value = servidor.nome || '';
+    el('id-email').value = servidor.email || '';
+    el('id-matricula').value = servidor.matricula || '';
+    if (servidor.funcao_id) el('id-funcao').value = servidor.funcao_id;
+    if (servidor.ubs_id) el('id-ubs').value = servidor.ubs_id;
+  }
+  el('id-assunto').value = '';
+  el('modal-identificacao').hidden = false;
+  el('id-nome').focus();
+}
+
+function fecharModal() { el('modal-identificacao').hidden = true; }
+
+el('id-cancelar').addEventListener('click', fecharModal);
+el('modal-identificacao').addEventListener('click', (ev) => {
+  if (ev.target === el('modal-identificacao')) fecharModal();  // clique fora fecha
+});
+
+el('form-identificacao').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const dados = {
+    nome: el('id-nome').value.trim(),
+    email: el('id-email').value.trim(),
+    matricula: el('id-matricula').value.trim(),
+    funcao_id: Number(el('id-funcao').value) || null,
+    ubs_id: Number(el('id-ubs').value) || null,
+  };
+  const erro = el('id-erro');
+  try {
+    const s = await api.post('/api/servidores/identificar', dados);
+    const ubsNome = el('id-ubs').selectedOptions[0]?.textContent || '';
+    salvarServidor({ usuario_id: s.usuario_id, ...dados, ubs_nome: ubsNome });
+    atualizarIdentidade();
+
+    const assunto = el('id-assunto').value.trim() || 'Atendimento';
+    const c = await api.post('/api/chat', { usuario_id: s.usuario_id, assunto });
+    fecharModal();
+    await carregarConversas();
+    abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto, status_ui: c.status });
+  } catch (e) {
+    erro.textContent = 'Não foi possível identificar. Verifique os campos e tente novamente.';
+    erro.hidden = false;
+  }
+});
+
 // ---------------------------------------------------------------- ações
 
-el('btn-novo').addEventListener('click', async () => {
-  const assunto = prompt('Assunto do atendimento:');
-  if (assunto === null) return;
-  const c = await api.post('/api/chat', { usuario_id: USUARIO_ID, assunto: assunto || 'Atendimento' });
-  await carregarConversas();
-  abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto: assunto || 'Atendimento', status_ui: c.status });
-});
+el('btn-novo').addEventListener('click', abrirModal);
 
 el('btn-encerrar').addEventListener('click', async () => {
   if (!conversaAtual || !confirm('Encerrar este atendimento?')) return;
@@ -152,5 +223,7 @@ el('btn-encerrar').addEventListener('click', async () => {
 
 // ---------------------------------------------------------------- init
 
+atualizarIdentidade();
 carregarConversas();
 carregarChips();
+if (!servidor) abrirModal();  // primeira visita: já pede identificação

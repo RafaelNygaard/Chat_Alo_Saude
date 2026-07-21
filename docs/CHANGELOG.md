@@ -6,6 +6,23 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (6) — Popup de identificação do servidor (ADR-003, parte 1)
+
+- **Schema** (migration `db/migrations/002_identificacao_e_admin.sql` + `schema.sql`
+  + `models.py`): tabela `funcoes` (8 seeds), `usuarios` ganha `email`,
+  `funcao_id`, `senha_hash`; `papel` passa a aceitar `servidor`. Aplicado no banco.
+- **Backend**: `app/api/servidores.py` — `GET /api/funcoes`, `GET /api/ubs`,
+  `POST /api/servidores/identificar` (find-or-create por matrícula); repositórios
+  correspondentes.
+- **Frontend**: modal de identificação (Nome, e-mail, matrícula + combos Função e
+  Unidade + assunto) substitui o `prompt` do "Novo Atendimento"; identidade
+  persistida em `localStorage` e exibida no cabeçalho. Estilos do modal em
+  `estilo.css`.
+- Validado no navegador ponta a ponta (servidor criado com papel `servidor`,
+  função e unidade vinculadas; atendimento AS-2026-00003 aberto).
+
+---
+
 ## 2026-07-21 (5) — Publicação no GitHub e CI
 
 - Repositório publicado em <https://github.com/RafaelNygaard/Chat_Alo_Saude>

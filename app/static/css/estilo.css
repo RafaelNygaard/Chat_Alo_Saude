@@ -75,6 +75,44 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
 .cabecalho .identidade { text-align: right; font-size: .8rem; }
 .cabecalho .identidade strong { display: block; font-size: .95rem; }
 
+/* Modal de identificação (ADR-003) */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(7, 29, 65, .55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay[hidden] { display: none; }
+.modal {
+  background: var(--branco); border-radius: 12px;
+  width: 100%; max-width: 520px; padding: 1.6rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+  max-height: 92vh; overflow-y: auto;
+}
+.modal .titulo { color: var(--azul-escuro); font-size: 1.25rem; }
+.modal-sub { color: var(--cinza-texto); font-size: .85rem; margin: .3rem 0 1.1rem; }
+.modal label {
+  display: block; font-size: .82rem; font-weight: 600;
+  color: var(--azul-escuro); margin-bottom: .8rem;
+}
+.modal input, .modal select {
+  width: 100%; margin-top: .3rem; padding: .55rem .7rem;
+  border: 1px solid var(--cinza-borda); border-radius: 6px;
+  font-family: inherit; font-size: .92rem; font-weight: 400; color: var(--texto);
+  background: var(--branco);
+}
+.modal input:focus, .modal select:focus {
+  outline: 2px solid var(--azul-govbr); border-color: var(--azul-govbr);
+}
+.modal .linha-campos { display: flex; gap: .8rem; }
+.modal .linha-campos label { flex: 1; }
+.modal-erro {
+  background: #fde8e8; color: #a30000; border-radius: 6px;
+  padding: .5rem .7rem; font-size: .82rem; font-weight: 600; margin-bottom: .8rem;
+}
+.modal-acoes { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .4rem; }
+@media (max-width: 480px) { .modal .linha-campos { flex-direction: column; gap: 0; } }
+
 /* Layout principal */
 .principal { flex: 1; display: flex; min-height: 0; }
 
