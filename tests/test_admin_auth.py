@@ -41,23 +41,37 @@ def client(app):
 
 
 # ---------------------------------------------------------- identificação
-def test_identificar_cria_servidor(client):
-    r = client.post("/api/servidores/identificar", json={
-        "nome": "Fulano", "email": "fulano@ex.com", "matricula": "M1",
-        "funcao_id": 1, "ubs_id": 1})
+def _dados_servidor(**over):
+    d = {"nome": "Fulano", "email": "fulano@ex.com", "matricula": "M1",
+         "senha": "segredo1", "funcao_id": 1, "ubs_id": 1}
+    d.update(over)
+    return d
+
+
+def test_identificar_cadastra_servidor(client):
+    r = client.post("/api/servidores/identificar", json=_dados_servidor())
     assert r.status_code == 200
-    uid = r.get_json()["usuario_id"]
-    u = Session.get(Usuario, uid)
-    assert u.papel == "servidor" and u.funcao_id == 1 and u.ubs_id == 1
+    u = Session.get(Usuario, r.get_json()["usuario_id"])
+    assert u.papel == "servidor" and u.funcao_id == 1 and u.senha_hash  # senha gravada como hash
 
 
-def test_identificar_atualiza_mesmo_por_matricula(client):
-    p = {"nome": "Fulano", "email": "f@ex.com", "matricula": "M1", "funcao_id": 1, "ubs_id": 1}
-    id1 = client.post("/api/servidores/identificar", json=p).get_json()["usuario_id"]
-    p2 = {**p, "nome": "Fulano Silva"}
-    id2 = client.post("/api/servidores/identificar", json=p2).get_json()["usuario_id"]
-    assert id1 == id2  # find-or-create pela matrícula
+def test_identificar_autentica_e_atualiza(client):
+    id1 = client.post("/api/servidores/identificar", json=_dados_servidor()).get_json()["usuario_id"]
+    # mesma matrícula + senha correta -> mesmo id, dados atualizados
+    r2 = client.post("/api/servidores/identificar", json=_dados_servidor(nome="Fulano Silva"))
+    assert r2.status_code == 200 and r2.get_json()["usuario_id"] == id1
     assert Session.get(Usuario, id1).nome == "Fulano Silva"
+
+
+def test_identificar_senha_incorreta(client):
+    client.post("/api/servidores/identificar", json=_dados_servidor())
+    r = client.post("/api/servidores/identificar", json=_dados_servidor(senha="outra1"))
+    assert r.status_code == 401
+
+
+def test_identificar_senha_curta(client):
+    r = client.post("/api/servidores/identificar", json=_dados_servidor(senha="123"))
+    assert r.status_code == 400
 
 
 def test_identificar_valida_obrigatorios(client):
@@ -66,8 +80,7 @@ def test_identificar_valida_obrigatorios(client):
 
 
 def test_identificar_valida_email(client):
-    r = client.post("/api/servidores/identificar", json={
-        "nome": "X", "email": "invalido", "matricula": "M9", "funcao_id": 1, "ubs_id": 1})
+    r = client.post("/api/servidores/identificar", json=_dados_servidor(email="invalido"))
     assert r.status_code == 400
 
 

@@ -22,27 +22,39 @@ def listar_ubs() -> list[dict]:
     return [{"id": u.id, "nome": u.nome, "municipio": u.municipio} for u in rows]
 
 
-def identificar_servidor(nome: str, email: str, matricula: str,
-                         funcao_id: int, ubs_id: int) -> Usuario:
-    """Find-or-create do servidor pela matrícula (chave natural); atualiza dados.
+def identificar_servidor(nome: str, email: str, matricula: str, funcao_id: int,
+                         ubs_id: int, senha: str) -> tuple[Usuario | None, str | None]:
+    """Cadastra (matrícula nova) ou autentica (matrícula existente) o servidor.
 
-    Não rebaixa o papel de um usuário que já seja atendente/admin.
+    - Matrícula nova: cria com a senha (hash).
+    - Matrícula existente com senha definida: exige a senha correta.
+    - Matrícula existente sem senha (registro legado): define a senha agora.
+
+    Retorna (usuario, None) em sucesso ou (None, erro) em falha de autenticação.
+    Não rebaixa o papel de quem já é atendente/admin.
     """
+    from werkzeug.security import check_password_hash, generate_password_hash
+
     u = Session.query(Usuario).filter_by(matricula=matricula).first()
-    if u is None and email:
-        u = Session.query(Usuario).filter_by(email=email).first()
-    if u is None:
+    novo = u is None
+    if not novo and u.senha_hash:
+        if not check_password_hash(u.senha_hash, senha):
+            return None, "Matrícula já cadastrada e a senha está incorreta."
+    if novo:
         u = Usuario(papel="servidor")
         Session.add(u)
+
     u.nome = nome
     u.email = email or u.email
     u.matricula = matricula or u.matricula
     u.funcao_id = funcao_id
     u.ubs_id = ubs_id
+    if novo or not u.senha_hash:          # cadastra a senha na 1ª vez
+        u.senha_hash = generate_password_hash(senha)
     if u.papel not in ("atendente", "admin"):
         u.papel = "servidor"
     Session.commit()
-    return u
+    return u, None
 
 
 def carregar_intents() -> list[IntentDef]:

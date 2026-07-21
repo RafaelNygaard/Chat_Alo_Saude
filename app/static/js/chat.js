@@ -172,9 +172,9 @@ async function abrirModal() {
     if (servidor.funcao_id) el('id-funcao').value = servidor.funcao_id;
     if (servidor.ubs_id) el('id-ubs').value = servidor.ubs_id;
   }
-  el('id-assunto').value = '';
+  el('id-senha').value = '';  // nunca pré-preenche a senha
   el('modal-identificacao').hidden = false;
-  el('id-nome').focus();
+  (servidor ? el('id-senha') : el('id-nome')).focus();
 }
 
 function fecharModal() { el('modal-identificacao').hidden = true; }
@@ -186,27 +186,40 @@ el('modal-identificacao').addEventListener('click', (ev) => {
 
 el('form-identificacao').addEventListener('submit', async (ev) => {
   ev.preventDefault();
+  const erro = el('id-erro');
+  erro.hidden = true;
   const dados = {
     nome: el('id-nome').value.trim(),
     email: el('id-email').value.trim(),
     matricula: el('id-matricula').value.trim(),
+    senha: el('id-senha').value,
     funcao_id: Number(el('id-funcao').value) || null,
     ubs_id: Number(el('id-ubs').value) || null,
   };
-  const erro = el('id-erro');
-  try {
-    const s = await api.post('/api/servidores/identificar', dados);
-    const ubsNome = el('id-ubs').selectedOptions[0]?.textContent || '';
-    salvarServidor({ usuario_id: s.usuario_id, ...dados, ubs_nome: ubsNome });
-    atualizarIdentidade();
 
-    const assunto = el('id-assunto').value.trim() || 'Atendimento';
-    const c = await api.post('/api/chat', { usuario_id: s.usuario_id, assunto });
+  // fetch direto para ler a mensagem de erro do servidor (ex.: senha incorreta)
+  const r = await fetch('/api/servidores/identificar', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
+  });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    erro.textContent = j.erro || 'Não foi possível identificar. Verifique os campos.';
+    erro.hidden = false;
+    return;
+  }
+  const s = await r.json();
+  const ubsNome = el('id-ubs').selectedOptions[0]?.textContent || '';
+  const { senha, ...semSenha } = dados;  // a senha nunca é persistida no navegador
+  salvarServidor({ usuario_id: s.usuario_id, ...semSenha, ubs_nome: ubsNome });
+  atualizarIdentidade();
+
+  try {
+    const c = await api.post('/api/chat', { usuario_id: s.usuario_id, assunto: 'Atendimento' });
     fecharModal();
     await carregarConversas();
-    abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto, status_ui: c.status });
+    abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto: 'Atendimento', status_ui: c.status });
   } catch (e) {
-    erro.textContent = 'Não foi possível identificar. Verifique os campos e tente novamente.';
+    erro.textContent = 'Identificado, mas houve falha ao abrir o atendimento.';
     erro.hidden = false;
   }
 });

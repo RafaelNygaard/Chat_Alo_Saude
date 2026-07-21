@@ -26,11 +26,16 @@ sem coleta de dados nem gestão. Necessidades:
   aceitar `servidor`. Migration idempotente `db/migrations/002_*.sql`.
 
 ### D2 — Identificação (popup)
-- Modal no "Novo Atendimento" coleta os campos e chama
-  `POST /api/servidores/identificar`, que faz **find-or-create pela matrícula**
-  (chave natural), sem rebaixar quem já é atendente/admin.
-- Servidores **não fazem login**; a identidade é persistida em `localStorage`
-  para reidentificação rápida a cada atendimento.
+- Modal no "Novo Atendimento" coleta nome, e-mail, matrícula, função, unidade e
+  **senha**, e chama `POST /api/servidores/identificar` (chave natural =
+  matrícula), sem rebaixar quem já é atendente/admin.
+- **Cadastro-ou-autenticação** (rev. 2026-07-21): matrícula nova → cadastra com
+  senha (hash); matrícula existente → exige a senha correta (senha errada = 401);
+  registro legado sem senha → define a senha no próximo acesso. Isso evita que
+  qualquer pessoa assuma a matrícula de outra. A senha nunca é persistida no
+  navegador; a identidade (sem senha) fica em `localStorage` para pré-preencher.
+- O campo "Assunto do atendimento" foi **substituído** pela senha; o assunto
+  passa a usar o padrão "Atendimento".
 
 ### D3 — Autenticação (decisão do responsável: login completo)
 - **Sessão Flask** (cookie assinado por `SECRET_KEY`) + **hash de senha do

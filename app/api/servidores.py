@@ -20,22 +20,31 @@ def listar_ubs():
     return jsonify(repo.listar_ubs())
 
 
+SENHA_MIN = 6
+
+
 @bp.post("/servidores/identificar")
 def identificar():
     d = request.get_json(force=True)
     nome = (d.get("nome") or "").strip()
     email = (d.get("email") or "").strip()
     matricula = (d.get("matricula") or "").strip()
+    senha = d.get("senha") or ""
     funcao_id = d.get("funcao_id")
     ubs_id = d.get("ubs_id")
 
     obrigatorios = {"nome": nome, "email": email, "matricula": matricula,
-                    "funcao_id": funcao_id, "ubs_id": ubs_id}
+                    "senha": senha, "funcao_id": funcao_id, "ubs_id": ubs_id}
     faltando = [k for k, v in obrigatorios.items() if not v]
     if faltando:
         return jsonify({"erro": f"campos obrigatórios: {', '.join(faltando)}"}), 400
     if not RE_EMAIL.match(email):
         return jsonify({"erro": "e-mail inválido"}), 400
+    if len(senha) < SENHA_MIN:
+        return jsonify({"erro": f"a senha deve ter ao menos {SENHA_MIN} caracteres"}), 400
 
-    u = repo.identificar_servidor(nome, email, matricula, int(funcao_id), int(ubs_id))
+    u, erro = repo.identificar_servidor(nome, email, matricula,
+                                        int(funcao_id), int(ubs_id), senha)
+    if erro:
+        return jsonify({"erro": erro}), 401
     return jsonify({"usuario_id": u.id, "nome": u.nome, "ubs_id": u.ubs_id})

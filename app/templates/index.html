@@ -56,9 +56,11 @@
             <select id="id-ubs" required></select>
           </label>
         </div>
-        <label>Assunto do atendimento
-          <input id="id-assunto" type="text" placeholder="Opcional" maxlength="120">
+        <label>Senha
+          <input id="id-senha" type="password" required minlength="6" autocomplete="current-password"
+                 placeholder="mínimo 6 caracteres">
         </label>
+        <p class="modal-sub" style="margin:-.4rem 0 .6rem">Primeiro acesso cadastra a senha; nos próximos, ela é solicitada para confirmar sua identidade.</p>
         <p class="modal-erro" id="id-erro" role="alert" hidden></p>
         <div class="modal-acoes">
           <button type="button" class="btn secundario" id="id-cancelar">Cancelar</button>

@@ -6,6 +6,23 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (9) — Popup passa a exigir senha (cadastro/autenticação)
+
+- Campo **Assunto do atendimento** substituído por **Senha** no popup
+  (`templates/index.html` + `static/js/chat.js`); assunto passa a usar o padrão
+  "Atendimento".
+- `identificar_servidor` (repositório) vira **cadastro-ou-autenticação**:
+  matrícula nova cadastra a senha (hash Werkzeug/scrypt); existente exige a senha
+  correta (401 se errada); registro legado sem senha define-a no acesso.
+  `POST /api/servidores/identificar` valida senha mínima de 6 caracteres.
+- A senha **nunca** é persistida no navegador (removida antes de salvar em
+  `localStorage`); armazenada só como hash no banco.
+- Testes atualizados (senha obrigatória, senha incorreta → 401, senha curta →
+  400) — 35 no total. Verificado no navegador: cadastro, senha errada e senha
+  correta. Ver [ADR-003](../ADR-003-identificacao-e-admin.md) D2.
+
+---
+
 ## 2026-07-21 (8) — Acesso pela rede (bind configurável)
 
 - `run.py`: host/porta/debug via ambiente (`HOST`, `PORT`, `DEBUG`), default
