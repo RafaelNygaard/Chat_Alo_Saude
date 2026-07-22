@@ -6,6 +6,23 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (12) — Aviso de espera no handoff
+
+- Ao escalar para humano, o bot passa a responder **primeiro**:
+  *"Aguarde enquanto transfiro esse atendimento para um atendente disponível."*
+  (`MENSAGEM_AGUARDE` em `orchestrator.py`), e só então vem o divisor de sistema
+  com o desfecho da fila.
+- `Resposta.mensagens_extra` (campo que existia sem uso) passa a carregar o
+  divisor; `POST /api/conversas/<id>/mensagens` persiste as duas mensagens **na
+  ordem** e as devolve em `mensagens_extra`.
+- Vale para os três gatilhos da Decisão B (pedido explícito, tópico crítico,
+  baixa confiança) — todos resultam em transferência.
+- Verificado nos dois caminhos: com atendente disponível → aviso + "Transferido
+  para atendente humano"; sem atendente → aviso + prazo estimado de 30 min.
+- Testes: `TestMensagemDeEspera` + ajustes em `TestFilaSemAtendente` — **56 no total**.
+
+---
+
 ## 2026-07-21 (11) — Pesquisa de satisfação + mensagem de encerramento configurável
 
 - **Schema** (migration `003_pesquisa_e_encerramento.sql` + `schema.sql` +

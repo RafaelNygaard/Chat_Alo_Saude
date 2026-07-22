@@ -74,13 +74,20 @@ def enviar_mensagem(conversa_id: int):
     if resposta.texto:
         repo.gravar_mensagem(conversa_id, resposta.autor, resposta.texto,
                              resposta.confianca)
+    # Ex.: no handoff, o aviso do bot vem primeiro e o divisor de sistema depois
+    for extra in resposta.mensagens_extra:
+        if extra.texto:
+            repo.gravar_mensagem(conversa_id, extra.autor, extra.texto,
+                                 extra.confianca)
     conversa.status = estado.status
     Session.commit()
 
     return jsonify(
         {"autor": resposta.autor, "texto": resposta.texto,
          "handoff": resposta.handoff, "gatilho": resposta.gatilho,
-         "status": Conversa.STATUS_UI[conversa.status]}
+         "status": Conversa.STATUS_UI[conversa.status],
+         "mensagens_extra": [{"autor": e.autor, "texto": e.texto}
+                             for e in resposta.mensagens_extra if e.texto]}
     )
 
 

@@ -8,7 +8,9 @@ Fluxo por mensagem:
      b. tópico crítico (palavras-chave vindas de tabela, não de código)
      c. confiança < limiar em N mensagens consecutivas
   4. Sem gatilho: bot responde via NLPEngine.gerar_resposta().
-  5. Com gatilho: escala via HandoffManager e grava divisor de sistema.
+  5. Com gatilho: o bot avisa que está transferindo (MENSAGEM_AGUARDE), escala via
+     HandoffManager e grava o desfecho da fila como divisor de sistema
+     (em `mensagens_extra`, persistido na ordem pela API).
 """
 from dataclasses import dataclass, field
 
@@ -17,6 +19,11 @@ from app.nlp.preprocess import normalizar
 from app.orchestrator.handoff import HandoffManager
 
 INTENT_PEDIDO_EXPLICITO = "falar_com_atendente"
+
+# Aviso imediato ao usuário enquanto a fila é verificada e o atendente atribuído.
+MENSAGEM_AGUARDE = (
+    "Aguarde enquanto transfiro esse atendimento para um atendente disponível."
+)
 
 
 @dataclass
@@ -94,11 +101,15 @@ class Orquestrador:
         resultado = self._handoff.escalar(estado.conversa_id, gatilho)
         estado.status = "humano" if resultado.atribuido else "fila"
         estado.baixa_confianca_consecutivas = 0
-        # Divisor de sistema: gravado como mensagens.autor = 'sistema' (auditável)
+        # 1ª mensagem: aviso do bot ao usuário; 2ª: divisor de sistema com o
+        # desfecho da fila (mensagens.autor = 'sistema', auditável).
         return Resposta(
-            autor="sistema",
-            texto=resultado.mensagem_sistema,
+            autor="bot",
+            texto=MENSAGEM_AGUARDE,
             confianca=confianca,
             handoff=True,
             gatilho=gatilho,
+            mensagens_extra=[
+                Resposta(autor="sistema", texto=resultado.mensagem_sistema)
+            ],
         )

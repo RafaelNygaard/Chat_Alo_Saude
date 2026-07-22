@@ -1,7 +1,9 @@
 """Testes dos gatilhos de handoff (ADR-001, Decisão B) — sem banco, com fakes."""
 from app.nlp.engine import Contexto, Entendimento, NLPEngine
 from app.orchestrator.handoff import HandoffManager
-from app.orchestrator.orchestrator import EstadoConversa, Orquestrador
+from app.orchestrator.orchestrator import (
+    MENSAGEM_AGUARDE, EstadoConversa, Orquestrador,
+)
 
 
 class FakeNLP(NLPEngine):
@@ -95,6 +97,27 @@ class TestGatilhos:
         assert not r.handoff  # contador recomeçou: 1 < 2
 
 
+class TestMensagemDeEspera:
+    """Ao escalar, o bot avisa primeiro; o desfecho da fila vem em seguida."""
+
+    def test_bot_avisa_que_esta_transferindo(self):
+        orq, _ = montar([Entendimento("falar_com_atendente", 0.9)], disponiveis=[5])
+        r = orq.processar(EstadoConversa(1), "quero atendente")
+        assert r.autor == "bot"
+        assert r.texto == MENSAGEM_AGUARDE
+        assert r.texto == ("Aguarde enquanto transfiro esse atendimento "
+                           "para um atendente disponível.")
+
+    def test_aviso_vale_para_todos_os_gatilhos(self):
+        for entendimento, texto in [
+            (Entendimento("falar_com_atendente", 0.9), "quero atendente"),
+            (Entendimento("encaminhamento", 0.95), "caso URGENTE"),
+        ]:
+            orq, _ = montar([entendimento], disponiveis=[5])
+            r = orq.processar(EstadoConversa(1), texto)
+            assert r.handoff and r.texto == MENSAGEM_AGUARDE
+
+
 class TestFilaSemAtendente:
     def test_sem_atendente_vai_para_fila_com_prazo(self):
         orq, repo = montar([Entendimento("falar_com_atendente", 0.9)], disponiveis=[])
@@ -102,14 +125,16 @@ class TestFilaSemAtendente:
         r = orq.processar(estado, "quero atendente")
         assert r.handoff
         assert estado.status == "fila"
-        assert "30 minutos" in r.texto
+        assert r.texto == MENSAGEM_AGUARDE            # aviso vem primeiro
+        assert "30 minutos" in r.mensagens_extra[0].texto  # desfecho depois
         assert repo.atribuicoes == []
 
     def test_divisor_de_sistema_com_atendente(self):
         orq, _ = montar([Entendimento("falar_com_atendente", 0.9)], disponiveis=[5])
         r = orq.processar(EstadoConversa(1), "quero atendente")
-        assert r.autor == "sistema"
-        assert "Transferido" in r.texto
+        divisor = r.mensagens_extra[0]
+        assert divisor.autor == "sistema"
+        assert "Transferido" in divisor.texto
 
 
 class TestConversaJaEscalada:
