@@ -52,17 +52,37 @@ function criarMsgEl(m) {
 
 /**
  * Assina o stream SSE de uma conversa (Decisão C do ADR-001).
- * O EventSource reconecta sozinho; `afterRef` mantém o último id recebido.
+ *
+ * Cada mensagem é entregue UMA única vez. A URL do EventSource é imutável, então
+ * a reconexão automática do navegador reenviaria tudo a partir do `after`
+ * original (mensagens repetindo em ciclo). Por isso:
+ *   1. ao receber `fim_ciclo`, fechamos e reassinamos com o `after` atualizado;
+ *   2. `vistos` descarta qualquer id repetido (rede caindo, reconexão do browser).
+ * Retorna um objeto com `close()`.
  */
 function assinarStream(conversaId, afterRef, { onMensagem, onStatus }) {
-  const es = new EventSource(`/api/conversas/${conversaId}/stream?after=${afterRef.valor}`);
-  es.addEventListener('mensagem', (ev) => {
-    const m = JSON.parse(ev.data);
-    afterRef.valor = Math.max(afterRef.valor, m.id);
-    onMensagem(m);
-  });
-  es.addEventListener('status', (ev) => onStatus?.(JSON.parse(ev.data)));
-  return es;
+  let es = null;
+  let ativo = true;
+  const vistos = new Set();
+
+  function conectar() {
+    if (!ativo) return;
+    es = new EventSource(`/api/conversas/${conversaId}/stream?after=${afterRef.valor}`);
+
+    es.addEventListener('mensagem', (ev) => {
+      const m = JSON.parse(ev.data);
+      afterRef.valor = Math.max(afterRef.valor, m.id);
+      if (vistos.has(m.id)) return;   // já renderizada: nunca duplica
+      vistos.add(m.id);
+      onMensagem(m);
+    });
+    es.addEventListener('status', (ev) => onStatus?.(JSON.parse(ev.data)));
+    // Fim do ciclo do servidor: reabre já a partir da última mensagem recebida
+    es.addEventListener('fim_ciclo', () => { es.close(); conectar(); });
+  }
+
+  conectar();
+  return { close() { ativo = false; es?.close(); } };
 }
 
 // Alto contraste, persistido em localStorage

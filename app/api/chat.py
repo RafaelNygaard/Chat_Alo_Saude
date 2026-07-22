@@ -192,9 +192,14 @@ def stream_mensagens(conversa_id: int):
     quando o servidor encerra o ciclo. Fallback trivial: GET /mensagens (polling).
     """
     after = request.args.get("after", default=0, type=int)
+    # Numa reconexão o navegador reenvia o último id entregue; ele é mais
+    # confiável que o ?after= da URL (que fica congelado no valor inicial).
+    ultimo_evento = request.headers.get("Last-Event-ID", "")
+    if ultimo_evento.isdigit():
+        after = max(after, int(ultimo_evento))
 
     def gerar(ultimo_id: int):
-        # ~25 s por ciclo; depois encerra e o EventSource reconecta
+        # ~25 s por ciclo; depois encerra e o cliente reassina com o id atual
         for _ in range(25):
             Session.expire_all()
             novas = (
@@ -205,7 +210,9 @@ def stream_mensagens(conversa_id: int):
             )
             for m in novas:
                 ultimo_id = m.id
-                yield f"event: mensagem\ndata: {json.dumps(_msg_json(m))}\n\n"
+                # `id:` permite ao cliente retomar exatamente daqui
+                yield (f"id: {m.id}\nevent: mensagem\n"
+                       f"data: {json.dumps(_msg_json(m))}\n\n")
             conversa = Session.get(Conversa, conversa_id)
             if conversa:
                 yield ("event: status\ndata: "

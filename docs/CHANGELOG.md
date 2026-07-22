@@ -6,6 +6,40 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-22 (16) — Correção: mensagens repetindo em ciclo no chat
+
+**Sintoma:** mensagens do usuário, do bot, o divisor de transferência e o
+"Atendimento encerrado" reapareciam repetidamente a cada ~25 s.
+
+**Causa raiz:** a URL do `EventSource` é montada **uma única vez**
+(`assinarStream`, `comum.js`) com o `after` daquele instante. O servidor encerra
+o ciclo do stream a cada ~25 s e o navegador **reconecta sozinho na mesma URL** —
+com o `after` congelado. A cada reconexão, tudo que havia chegado desde a
+abertura da conversa era reenviado.
+
+**Correção (três camadas):**
+1. `comum.js`: ao receber `fim_ciclo`, o cliente **fecha e reassina** com o
+   `after` atualizado, em vez de deixar o navegador reconectar com a URL antiga.
+2. `comum.js`: conjunto `vistos` **descarta ids repetidos** — rede caindo ou
+   reconexão inesperada não duplica nada na tela.
+3. `chat.py`: o stream passa a emitir `id: <msg_id>` e a honrar o cabeçalho
+   `Last-Event-ID`, o mecanismo padrão de retomada do SSE.
+
+Vale para chat e painel do atendente (ambos usam `assinarStream`).
+
+**Sobre o encerramento:** os testes confirmam que o servidor **nunca** gravou
+"Atendimento encerrado" em duplicidade (`_encerrar` já era idempotente) — a
+repetição era só de exibição, pelo replay do stream.
+
+- Testes: `tests/test_stream_sse.py` (5 casos: entrega com `id:`, sem reenvio,
+  `Last-Event-ID` na reconexão, encerrar 2× e pesquisa após encerrar) — **74 no
+  total**.
+- Verificado no navegador: contagem de mensagens **constante (3, 3, 3)** em
+  t=0/30s/60s, atravessando dois ciclos; após encerrar, "Atendimento encerrado"
+  e cartão de despedida permanecem **1×** mesmo após novo ciclo.
+
+---
+
 ## 2026-07-22 (15) — Fila de atendentes com distribuição balanceada (round-robin)
 
 - **Bug corrigido (bloqueante):** `atribuir()` marcava o atendente como `ocupado`
