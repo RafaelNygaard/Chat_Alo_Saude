@@ -1,7 +1,7 @@
 """Repositórios: ponte entre orquestrador/handoff e o PostgreSQL."""
 from datetime import datetime
 
-from sqlalchemy import text
+from sqlalchemy import or_, text
 
 from app.db import Session
 from app.models import (
@@ -20,6 +20,25 @@ def listar_funcoes() -> list[dict]:
 def listar_ubs() -> list[dict]:
     rows = Session.query(UBS).order_by(UBS.nome).all()
     return [{"id": u.id, "nome": u.nome, "municipio": u.municipio} for u in rows]
+
+
+def autenticar_servidor(identificador: str, senha: str) -> tuple[Usuario | None, str | None]:
+    """Login do servidor por e-mail OU matrícula. Não cria cadastro (ADR-003).
+
+    Retorna (usuario, None) em sucesso ou (None, erro).
+    """
+    from werkzeug.security import check_password_hash
+
+    u = (
+        Session.query(Usuario)
+        .filter(or_(Usuario.email == identificador, Usuario.matricula == identificador))
+        .first()
+    )
+    if u is None:
+        return None, 'Cadastro não encontrado. Use "Cadastrar usuário".'
+    if not u.senha_hash or not check_password_hash(u.senha_hash, senha):
+        return None, "E-mail/matrícula ou senha incorretos."
+    return u, None
 
 
 def identificar_servidor(nome: str, email: str, matricula: str, funcao_id: int,

@@ -84,6 +84,44 @@ def test_identificar_valida_email(client):
     assert r.status_code == 400
 
 
+# ------------------------------------------------- login do profissional
+def test_login_servidor_por_matricula(client):
+    uid = client.post("/api/servidores/identificar",
+                      json=_dados_servidor()).get_json()["usuario_id"]
+    r = client.post("/api/servidores/login",
+                    json={"identificador": "M1", "senha": "segredo1"})
+    assert r.status_code == 200
+    j = r.get_json()
+    assert j["usuario_id"] == uid and j["funcao_id"] == 1  # devolve dados p/ a UI
+
+
+def test_login_servidor_por_email(client):
+    client.post("/api/servidores/identificar", json=_dados_servidor())
+    r = client.post("/api/servidores/login",
+                    json={"identificador": "fulano@ex.com", "senha": "segredo1"})
+    assert r.status_code == 200
+
+
+def test_login_servidor_senha_errada(client):
+    client.post("/api/servidores/identificar", json=_dados_servidor())
+    r = client.post("/api/servidores/login",
+                    json={"identificador": "M1", "senha": "errada9"})
+    assert r.status_code == 401
+
+
+def test_login_servidor_nao_cadastrado(client):
+    r = client.post("/api/servidores/login",
+                    json={"identificador": "M-INEXISTENTE", "senha": "qualquer"})
+    assert r.status_code == 401
+    assert "Cadastrar usuário" in r.get_json()["erro"]  # orienta o cadastro
+
+
+def test_login_servidor_nao_cria_usuario(client):
+    antes = Session.query(Usuario).count()
+    client.post("/api/servidores/login", json={"identificador": "novo@ex.com", "senha": "x"})
+    assert Session.query(Usuario).count() == antes  # login nunca cadastra
+
+
 # ---------------------------------------------------------- autenticação
 def _cria_admin(senha="segredo"):
     Session.add(Usuario(nome="Adm", email="adm@ex.com", papel="admin",

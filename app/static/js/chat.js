@@ -23,6 +23,21 @@ function salvarServidor(s) { localStorage.setItem('servidor', JSON.stringify(s))
 function atualizarIdentidade() {
   el('usuario-nome').textContent = servidor ? servidor.nome : 'Não identificado';
   el('usuario-ubs').textContent = servidor?.ubs_nome || '';
+  el('btn-sair-servidor').hidden = !servidor;
+}
+
+function sairServidor() {
+  localStorage.removeItem('servidor');
+  servidor = null;
+  conversaAtual = null;
+  stream?.close();
+  listaEl.innerHTML = '';
+  mensagensEl.innerHTML = '';
+  el('chat-cabecalho').hidden = true;
+  el('form-entrada').hidden = true;
+  el('chips').hidden = true;
+  atualizarIdentidade();
+  abrirLogin();
 }
 
 // ---------------------------------------------------------------- sidebar
@@ -148,7 +163,45 @@ async function carregarChips() {
   });
 }
 
-// -------------------------------------------------------- modal identificação
+// ------------------------------------------------------------- tela de login
+
+function abrirLogin() {
+  el('login-servidor-erro').hidden = true;
+  el('login-servidor-senha').value = '';
+  if (servidor?.matricula) el('login-servidor-id').value = servidor.matricula;
+  el('modal-login').hidden = false;
+  el(el('login-servidor-id').value ? 'login-servidor-senha' : 'login-servidor-id').focus();
+}
+
+function fecharLogin() { el('modal-login').hidden = true; }
+
+el('form-login-servidor').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const erro = el('login-servidor-erro');
+  erro.hidden = true;
+  const r = await fetch('/api/servidores/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      identificador: el('login-servidor-id').value.trim(),
+      senha: el('login-servidor-senha').value,
+    }),
+  });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    erro.textContent = j.erro || 'Não foi possível entrar.';
+    erro.hidden = false;
+    return;
+  }
+  salvarServidor(await r.json());  // resposta já vem sem senha
+  atualizarIdentidade();
+  fecharLogin();
+  await carregarConversas();
+});
+
+// "Cadastrar usuário" leva o novo profissional ao popup de cadastro
+el('btn-ir-cadastro').addEventListener('click', () => { fecharLogin(); abrirModal(); });
+
+// -------------------------------------------------------- modal de cadastro
 
 let combosCarregados = false;
 
@@ -179,9 +232,12 @@ async function abrirModal() {
 
 function fecharModal() { el('modal-identificacao').hidden = true; }
 
-el('id-cancelar').addEventListener('click', fecharModal);
+function voltarParaLogin() { fecharModal(); abrirLogin(); }
+
+el('id-voltar-login').addEventListener('click', voltarParaLogin);
 el('modal-identificacao').addEventListener('click', (ev) => {
-  if (ev.target === el('modal-identificacao')) fecharModal();  // clique fora fecha
+  if (ev.target !== el('modal-identificacao')) return;   // clique fora
+  if (servidor) fecharModal(); else voltarParaLogin();   // sem identidade, volta ao login
 });
 
 el('form-identificacao').addEventListener('submit', async (ev) => {
@@ -214,19 +270,28 @@ el('form-identificacao').addEventListener('submit', async (ev) => {
   atualizarIdentidade();
 
   try {
-    const c = await api.post('/api/chat', { usuario_id: s.usuario_id, assunto: 'Atendimento' });
     fecharModal();
-    await carregarConversas();
-    abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto: 'Atendimento', status_ui: c.status });
+    await criarAtendimento();
   } catch (e) {
-    erro.textContent = 'Identificado, mas houve falha ao abrir o atendimento.';
+    erro.textContent = 'Cadastro concluído, mas houve falha ao abrir o atendimento.';
     erro.hidden = false;
   }
 });
 
 // ---------------------------------------------------------------- ações
 
-el('btn-novo').addEventListener('click', abrirModal);
+async function criarAtendimento(assunto = 'Atendimento') {
+  const c = await api.post('/api/chat', { usuario_id: servidor.usuario_id, assunto });
+  await carregarConversas();
+  abrirConversa({ id: c.conversa_id, protocolo: c.protocolo, assunto, status_ui: c.status });
+}
+
+// Já logado: abre atendimento direto (a senha só é pedida no login/cadastro)
+el('btn-novo').addEventListener('click', () => {
+  if (servidor) criarAtendimento(); else abrirLogin();
+});
+
+el('btn-sair-servidor').addEventListener('click', (ev) => { ev.preventDefault(); sairServidor(); });
 
 el('btn-encerrar').addEventListener('click', async () => {
   if (!conversaAtual || !confirm('Encerrar este atendimento?')) return;
@@ -239,4 +304,4 @@ el('btn-encerrar').addEventListener('click', async () => {
 atualizarIdentidade();
 carregarConversas();
 carregarChips();
-if (!servidor) abrirModal();  // primeira visita: já pede identificação
+if (!servidor) abrirLogin();  // sem identidade: tela de login (com opção de cadastro)

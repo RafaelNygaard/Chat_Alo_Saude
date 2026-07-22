@@ -36,6 +36,16 @@ sem coleta de dados nem gestão. Necessidades:
   navegador; a identidade (sem senha) fica em `localStorage` para pré-preencher.
 - O campo "Assunto do atendimento" foi **substituído** pela senha; o assunto
   passa a usar o padrão "Atendimento".
+- **Tela de login do profissional** (rev. 2026-07-21): a entrada do chat passa a
+  ser um login (e-mail **ou** matrícula + senha) via `POST /api/servidores/login`
+  — que **autentica sem criar** cadastro. O botão **"Cadastrar usuário"** leva ao
+  popup de cadastro; o cadastro tem "Já tenho cadastro" para voltar ao login.
+  Uma vez autenticado, **"Novo Atendimento" não pede senha novamente** (abre o
+  atendimento direto); há "Sair" no cabeçalho para trocar de usuário.
+- *Nota de segurança:* o login diferencia "cadastro não encontrado" de "senha
+  incorreta" para orientar o novo usuário ao cadastro. Isso permite enumeração de
+  matrículas — aceitável num sistema interno, a revisar se houver exposição
+  pública.
 
 ### D3 — Autenticação (decisão do responsável: login completo)
 - **Sessão Flask** (cookie assinado por `SECRET_KEY`) + **hash de senha do

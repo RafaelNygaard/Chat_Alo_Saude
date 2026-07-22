@@ -23,6 +23,25 @@ def listar_ubs():
 SENHA_MIN = 6
 
 
+@bp.post("/servidores/login")
+def login_servidor():
+    """Login do profissional já cadastrado (e-mail ou matrícula + senha)."""
+    d = request.get_json(force=True)
+    identificador = (d.get("identificador") or "").strip()
+    senha = d.get("senha") or ""
+    if not identificador or not senha:
+        return jsonify({"erro": "informe e-mail/matrícula e senha"}), 400
+
+    u, erro = repo.autenticar_servidor(identificador, senha)
+    if erro:
+        return jsonify({"erro": erro}), 401
+    return jsonify({
+        "usuario_id": u.id, "nome": u.nome, "email": u.email,
+        "matricula": u.matricula, "funcao_id": u.funcao_id,
+        "ubs_id": u.ubs_id, "ubs_nome": u.ubs.nome if u.ubs else "",
+    })
+
+
 @bp.post("/servidores/identificar")
 def identificar():
     d = request.get_json(force=True)

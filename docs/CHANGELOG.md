@@ -6,6 +6,23 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (10) — Tela de login do profissional + botão "Cadastrar usuário"
+
+- **Novo endpoint** `POST /api/servidores/login` (e-mail **ou** matrícula +
+  senha) — autentica **sem criar** cadastro; repositório `autenticar_servidor`.
+- **Tela de login** na entrada do chat (`templates/index.html` +
+  `static/js/chat.js`), com botão **"Cadastrar usuário"** que abre o popup de
+  cadastro; o cadastro ganhou "Já tenho cadastro" para voltar ao login.
+- **"Novo Atendimento" não pede mais senha** quando já autenticado (abre o
+  atendimento direto); link **"Sair"** no cabeçalho troca de usuário.
+- Mensagens de erro distintas: cadastro inexistente orienta ao cadastro; senha
+  incorreta é genérica (nota de enumeração registrada no ADR-003 D2).
+- Testes: 5 novos (login por matrícula/e-mail, senha errada, não cadastrado,
+  login não cria usuário) — **40 no total**. Verificado no navegador: login,
+  criação direta de atendimento, Sair e navegação login↔cadastro.
+
+---
+
 ## 2026-07-21 (9) — Popup passa a exigir senha (cadastro/autenticação)
 
 - Campo **Assunto do atendimento** substituído por **Senha** no popup

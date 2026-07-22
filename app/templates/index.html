@@ -30,14 +30,36 @@
     <div class="identidade" id="identidade">
       <strong id="usuario-nome">Não identificado</strong>
       <span id="usuario-ubs"></span>
+      <a href="#" id="btn-sair-servidor" style="color:#fff;font-size:.72rem" hidden>Sair</a>
     </div>
   </header>
 
-  <!-- Modal de identificação do servidor (ADR-003) -->
+  <!-- Tela de login do profissional (ADR-003) -->
+  <div class="modal-overlay" id="modal-login" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="login-titulo">
+      <h2 class="titulo" id="login-titulo">Acesse o Alô Saúde</h2>
+      <p class="modal-sub">Entre com seu e-mail ou matrícula. Ainda não tem cadastro? Use "Cadastrar usuário".</p>
+      <form id="form-login-servidor">
+        <label>E-mail ou matrícula
+          <input id="login-servidor-id" type="text" required autocomplete="username" maxlength="120">
+        </label>
+        <label>Senha
+          <input id="login-servidor-senha" type="password" required autocomplete="current-password">
+        </label>
+        <p class="modal-erro" id="login-servidor-erro" role="alert" hidden></p>
+        <div class="modal-acoes">
+          <button type="button" class="btn secundario" id="btn-ir-cadastro">Cadastrar usuário</button>
+          <button type="submit" class="btn">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de cadastro do servidor (ADR-003) -->
   <div class="modal-overlay" id="modal-identificacao" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
-      <h2 class="titulo" id="modal-titulo">Identifique-se para iniciar o atendimento</h2>
-      <p class="modal-sub">Seus dados agilizam o retorno da equipe Alô Saúde.</p>
+      <h2 class="titulo" id="modal-titulo">Cadastro de profissional</h2>
+      <p class="modal-sub">Preencha seus dados para criar o acesso ao Alô Saúde.</p>
       <form id="form-identificacao">
         <label>Nome completo
           <input id="id-nome" type="text" required autocomplete="name" maxlength="120">
@@ -57,14 +79,14 @@
           </label>
         </div>
         <label>Senha
-          <input id="id-senha" type="password" required minlength="6" autocomplete="current-password"
+          <input id="id-senha" type="password" required minlength="6" autocomplete="new-password"
                  placeholder="mínimo 6 caracteres">
         </label>
-        <p class="modal-sub" style="margin:-.4rem 0 .6rem">Primeiro acesso cadastra a senha; nos próximos, ela é solicitada para confirmar sua identidade.</p>
+        <p class="modal-sub" style="margin:-.4rem 0 .6rem">Esta senha será usada nos próximos acessos.</p>
         <p class="modal-erro" id="id-erro" role="alert" hidden></p>
         <div class="modal-acoes">
-          <button type="button" class="btn secundario" id="id-cancelar">Cancelar</button>
-          <button type="submit" class="btn">Iniciar atendimento</button>
+          <button type="button" class="btn secundario" id="id-voltar-login">Já tenho cadastro</button>
+          <button type="submit" class="btn">Cadastrar e entrar</button>
         </div>
       </form>
     </div>
