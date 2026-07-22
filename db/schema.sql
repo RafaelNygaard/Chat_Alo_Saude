@@ -150,6 +150,33 @@ CREATE TABLE log_acessos_externos (
 );
 
 -- ---------------------------------------------------------------
+-- 11. pesquisas_satisfacao  (CSAT ao encerrar a conversa)
+-- ---------------------------------------------------------------
+CREATE TABLE pesquisas_satisfacao (
+    id          SERIAL PRIMARY KEY,
+    conversa_id INTEGER NOT NULL UNIQUE REFERENCES conversas(id),
+    nota        INTEGER NOT NULL CHECK (nota BETWEEN 1 AND 5),
+    comentario  TEXT,
+    criada_em   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------
+-- 12. config_encerramento  (linha única; mensagem final configurável no admin)
+-- ---------------------------------------------------------------
+CREATE TABLE config_encerramento (
+    id                SERIAL PRIMARY KEY,
+    texto             TEXT NOT NULL,
+    imagem_caminho    TEXT,
+    imagem_como_fundo BOOLEAN NOT NULL DEFAULT FALSE,
+    cor_fundo         TEXT NOT NULL DEFAULT '#e8f0fe',
+    cor_texto         TEXT NOT NULL DEFAULT '#071d41',
+    atualizado_em     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO config_encerramento (id, texto) VALUES
+    (1, 'A equipe do Alô Saúde agradece seu contato e deseja uma ótima semana!');
+
+-- ---------------------------------------------------------------
 -- Palavras-chave de tópicos críticos (Decisão B: em tabela, não em código)
 -- ---------------------------------------------------------------
 CREATE TABLE topicos_criticos (

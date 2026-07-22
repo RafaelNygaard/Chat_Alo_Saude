@@ -5,21 +5,30 @@ críticos), atendentes (disponibilidade) e relatórios (agregações + CSV).
 """
 import csv
 import io
+import os
+import time
+from datetime import datetime
 
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, current_app, jsonify, request
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash
 
+from app import repositories as repo
 from app.auth import admin_required
 from app.db import Session
 from app.models import (
-    AtendenteStatus, Conversa, FaqIntent, Funcao, Handoff, TopicoCritico,
-    UBS, Usuario,
+    AtendenteStatus, Conversa, FaqIntent, Funcao, Handoff, PesquisaSatisfacao,
+    TopicoCritico, UBS, Usuario,
 )
 
 bp = Blueprint("admin", __name__)
 
 PAPEIS = ("servidor", "enfermeiro", "atendente", "admin")
+
+# Upload da imagem da mensagem de encerramento (Decisão F do ADR-001: arquivo
+# fora do banco, caminho na tabela; tipo e tamanho validados).
+EXT_IMAGEM = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+TAM_MAX_IMAGEM = 2 * 1024 * 1024  # 2 MB
 
 
 # ============================================================ Cadastros: funções
@@ -295,6 +304,62 @@ def atendentes_status(aid):
     return jsonify({"atendente_id": aid, "status": status})
 
 
+# ============================================== Mensagem de encerramento
+@bp.get("/admin/encerramento")
+@admin_required
+def encerramento_obter():
+    return jsonify(repo.config_encerramento_json(repo.obter_config_encerramento()))
+
+
+@bp.put("/admin/encerramento")
+@admin_required
+def encerramento_salvar():
+    d = request.get_json(force=True)
+    texto = (d.get("texto") or "").strip()
+    if not texto:
+        return jsonify({"erro": "o texto da mensagem é obrigatório"}), 400
+
+    cfg = repo.obter_config_encerramento()
+    cfg.texto = texto
+    if d.get("cor_fundo"):
+        cfg.cor_fundo = d["cor_fundo"]
+    if d.get("cor_texto"):
+        cfg.cor_texto = d["cor_texto"]
+    if "imagem_como_fundo" in d:
+        cfg.imagem_como_fundo = bool(d["imagem_como_fundo"])
+    if "imagem" in d:                       # None/"" remove a imagem
+        cfg.imagem_caminho = d["imagem"] or None
+    cfg.atualizado_em = datetime.utcnow()
+    Session.commit()
+    return jsonify(repo.config_encerramento_json(cfg))
+
+
+@bp.post("/admin/encerramento/imagem")
+@admin_required
+def encerramento_imagem():
+    arquivo = request.files.get("imagem")
+    if arquivo is None or not arquivo.filename:
+        return jsonify({"erro": "envie um arquivo de imagem"}), 400
+    ext = os.path.splitext(arquivo.filename)[1].lower()
+    if ext not in EXT_IMAGEM:
+        return jsonify({"erro": f"formato não suportado ({', '.join(sorted(EXT_IMAGEM))})"}), 400
+    dados = arquivo.read()
+    if len(dados) > TAM_MAX_IMAGEM:
+        return jsonify({"erro": "imagem acima de 2 MB"}), 400
+
+    destino = os.path.join(current_app.static_folder, "uploads")
+    os.makedirs(destino, exist_ok=True)
+    nome = f"encerramento_{int(time.time())}{ext}"   # nome gerado, não o do usuário
+    with open(os.path.join(destino, nome), "wb") as saida:
+        saida.write(dados)
+
+    cfg = repo.obter_config_encerramento()
+    cfg.imagem_caminho = f"/static/uploads/{nome}"
+    cfg.atualizado_em = datetime.utcnow()
+    Session.commit()
+    return jsonify({"imagem": cfg.imagem_caminho})
+
+
 # =============================================================== Relatórios
 def _filtro_periodo(q):
     de, ate = request.args.get("de"), request.args.get("ate")
@@ -338,12 +403,34 @@ def rel_atendimentos():
         hq = hq.filter(Conversa.criada_em <= ate + " 23:59:59")
     por_gatilho = dict(hq.group_by(Handoff.gatilho).all())
 
+    # Satisfação (CSAT) das conversas do período
+    media, respostas = (
+        _filtro_periodo(
+            Session.query(func.avg(PesquisaSatisfacao.nota),
+                          func.count(PesquisaSatisfacao.id))
+            .select_from(Conversa)
+            .join(PesquisaSatisfacao, PesquisaSatisfacao.conversa_id == Conversa.id)
+        ).one()
+    )
+    distribuicao = dict(
+        _filtro_periodo(
+            Session.query(PesquisaSatisfacao.nota, func.count())
+            .select_from(Conversa)
+            .join(PesquisaSatisfacao, PesquisaSatisfacao.conversa_id == Conversa.id)
+        ).group_by(PesquisaSatisfacao.nota).all()
+    )
+
     return jsonify({
         "total": total,
         "por_status": {Conversa.STATUS_UI.get(k, k): v for k, v in por_status.items()},
         "por_ubs": por_ubs,
         "por_funcao": por_funcao,
         "handoffs_por_gatilho": por_gatilho,
+        "satisfacao": {
+            "media": round(float(media), 2) if media is not None else None,
+            "respostas": respostas,
+            "distribuicao": {str(k): v for k, v in distribuicao.items()},
+        },
     })
 
 

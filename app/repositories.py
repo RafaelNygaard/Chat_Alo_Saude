@@ -5,10 +5,44 @@ from sqlalchemy import or_, text
 
 from app.db import Session
 from app.models import (
-    AtendenteStatus, Conversa, FaqIntent, Funcao, Handoff, Mensagem,
-    TopicoCritico, UBS, Usuario,
+    AtendenteStatus, ConfigEncerramento, Conversa, FaqIntent, Funcao, Handoff,
+    Mensagem, PesquisaSatisfacao, TopicoCritico, UBS, Usuario,
+)
+
+TEXTO_ENCERRAMENTO_PADRAO = (
+    "A equipe do Alô Saúde agradece seu contato e deseja uma ótima semana!"
 )
 from app.nlp.rules_engine import IntentDef
+
+
+# --------------------------------------------- pesquisa / mensagem de encerramento
+def obter_config_encerramento() -> ConfigEncerramento:
+    """Config de linha única (id=1). Cria com o padrão se ainda não existir."""
+    cfg = Session.get(ConfigEncerramento, 1)
+    if cfg is None:
+        cfg = ConfigEncerramento(id=1, texto=TEXTO_ENCERRAMENTO_PADRAO)
+        Session.add(cfg)
+        Session.commit()
+    return cfg
+
+
+def config_encerramento_json(cfg: ConfigEncerramento) -> dict:
+    return {"texto": cfg.texto, "imagem": cfg.imagem_caminho,
+            "imagem_como_fundo": bool(cfg.imagem_como_fundo),
+            "cor_fundo": cfg.cor_fundo, "cor_texto": cfg.cor_texto}
+
+
+def registrar_pesquisa(conversa_id: int, nota: int,
+                       comentario: str | None) -> PesquisaSatisfacao:
+    """Grava (ou atualiza) a pesquisa da conversa — uma por conversa."""
+    p = Session.query(PesquisaSatisfacao).filter_by(conversa_id=conversa_id).first()
+    if p is None:
+        p = PesquisaSatisfacao(conversa_id=conversa_id)
+        Session.add(p)
+    p.nota = nota
+    p.comentario = (comentario or "").strip() or None
+    Session.commit()
+    return p
 
 
 # ------------------------------------------------------------- identificação

@@ -19,7 +19,8 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 
 | Seção | O que faz |
 |-------|-----------|
-| **Relatórios** | Total de atendimentos e quebras por status, unidade, função e handoff por gatilho no período. Botão **Exportar CSV** (`;` como separador). |
+| **Relatórios** | Total de atendimentos e quebras por status, unidade, função e handoff por gatilho no período; **satisfação** (média, nº de respostas e distribuição de notas). Botão **Exportar CSV** (`;` como separador). |
+| **Mensagem de encerramento** | Texto exibido após a pesquisa de satisfação. Aceita **emojis** (barra de atalho), **imagem** (PNG/JPG/GIF/WEBP até 2 MB), **cores** de fundo e texto, e opção de usar a imagem como **plano de fundo**. Tem pré-visualização ao vivo. |
 | **Servidores** | Lista/filtra usuários por papel; cria e edita (inclusive definir senha para papéis com login). |
 | **Funções** | Cadastra e ativa/desativa as funções do combo do popup. |
 | **Unidades de saúde** | Cadastra UBS/ESF (nome + município). |
@@ -34,10 +35,21 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 - `atendente` — responde na fila; tem login.
 - `admin` — acesso total ao console; tem login.
 
+## Pesquisa de satisfação
+
+Ao clicar em **Encerrar** no chat, o profissional avalia o atendimento (nota 1–5 +
+comentário opcional) ou escolhe **Pular**. Em seguida a conversa é encerrada e
+aparece o cartão com a mensagem configurada acima. As respostas alimentam o card
+de satisfação em **Relatórios**.
+
 ## Notas
 
 - Alterações em intents/tópicos entram em vigor no próximo atendimento (os intents
   são lidos do banco a cada requisição).
+- A mensagem de encerramento é **sempre a versão atual**: conversas antigas
+  reabertas exibem o texto configurado hoje, não o vigente à época.
+- Imagens enviadas ficam em `app/static/uploads/` (fora do banco) e não são
+  versionadas no git.
 - Segurança: em produção, usar `SECRET_KEY` forte e HTTPS. Login ainda não tem
   rate-limiting/2FA; o painel do atendente ainda usa `?atendente_id=` (ver dívidas
   no ADR-003).

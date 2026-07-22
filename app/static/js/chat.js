@@ -89,6 +89,9 @@ async function abrirConversa(c) {
   afterRef.valor = 0;
   const msgs = await api.get(`/api/conversas/${c.id}/mensagens`);
   msgs.forEach((m) => { mensagensEl.appendChild(criarMsgEl(m)); afterRef.valor = Math.max(afterRef.valor, m.id); });
+  if (c.status_ui === 'Encerrado') {
+    try { mostrarEncerramento(await api.get('/api/encerramento')); } catch (e) { /* card é opcional */ }
+  }
   rolarParaFim();
 
   stream = assinarStream(c.id, afterRef, {
@@ -293,11 +296,109 @@ el('btn-novo').addEventListener('click', () => {
 
 el('btn-sair-servidor').addEventListener('click', (ev) => { ev.preventDefault(); sairServidor(); });
 
-el('btn-encerrar').addEventListener('click', async () => {
-  if (!conversaAtual || !confirm('Encerrar este atendimento?')) return;
-  await api.post(`/api/conversas/${conversaAtual.id}/encerrar`);
-  carregarConversas();
+// Encerrar passa pela pesquisa de satisfação
+el('btn-encerrar').addEventListener('click', () => { if (conversaAtual) abrirPesquisa(); });
+
+// --------------------------------------------------- pesquisa de satisfação
+
+const ROTULOS_NOTA = ['Muito ruim', 'Ruim', 'Regular', 'Boa', 'Ótima'];
+const EMOJI_NOTA = ['\u{1F61E}', '\u{1F641}', '\u{1F610}', '\u{1F642}', '\u{1F604}'];
+let notaSelecionada = null;
+
+function montarNotas() {
+  const fs = el('notas');
+  if (fs.querySelector('.notas-botoes')) return;
+  const cont = document.createElement('div');
+  cont.className = 'notas-botoes';
+  for (let n = 1; n <= 5; n++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'nota-btn';
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', `Nota ${n} — ${ROTULOS_NOTA[n - 1]}`);
+    b.append(EMOJI_NOTA[n - 1]);
+    const r = document.createElement('span');
+    r.className = 'rotulo';
+    r.textContent = ROTULOS_NOTA[n - 1];
+    b.appendChild(r);
+    b.addEventListener('click', () => {
+      notaSelecionada = n;
+      cont.querySelectorAll('.nota-btn')
+        .forEach((x, i) => x.setAttribute('aria-pressed', String(i + 1 === n)));
+    });
+    cont.appendChild(b);
+  }
+  fs.appendChild(cont);
+}
+
+function abrirPesquisa() {
+  montarNotas();
+  notaSelecionada = null;
+  el('notas').querySelectorAll('.nota-btn').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+  el('pesquisa-comentario').value = '';
+  el('pesquisa-erro').hidden = true;
+  el('modal-pesquisa').hidden = false;
+}
+
+function fecharPesquisa() { el('modal-pesquisa').hidden = true; }
+
+async function finalizarEncerramento(resposta) {
+  fecharPesquisa();
+  atualizarBadge(resposta.status);
+  if (resposta.encerramento) mostrarEncerramento(resposta.encerramento);
+  await carregarConversas();
+}
+
+el('form-pesquisa').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const erro = el('pesquisa-erro');
+  if (!notaSelecionada) {
+    erro.textContent = 'Selecione uma nota de 1 a 5.';
+    erro.hidden = false;
+    return;
+  }
+  try {
+    finalizarEncerramento(await api.post(`/api/conversas/${conversaAtual.id}/pesquisa`, {
+      nota: notaSelecionada, comentario: el('pesquisa-comentario').value.trim(),
+    }));
+  } catch (e) {
+    erro.textContent = 'Falha ao enviar a pesquisa. Tente novamente.';
+    erro.hidden = false;
+  }
 });
+
+el('pesquisa-pular').addEventListener('click', async () => {
+  finalizarEncerramento(await api.post(`/api/conversas/${conversaAtual.id}/encerrar`));
+});
+
+/** Cartão final configurável (texto/emoji, imagem, cores) — ver área admin. */
+function mostrarEncerramento(cfg) {
+  el('cartao-encerramento')?.remove();
+  const card = document.createElement('div');
+  card.className = 'cartao-encerramento';
+  card.id = 'cartao-encerramento';
+  const comFundo = Boolean(cfg.imagem && cfg.imagem_como_fundo);
+  if (comFundo) {
+    card.classList.add('com-fundo');
+    card.style.backgroundImage = `url("${cfg.imagem}")`;
+  } else {
+    card.style.background = cfg.cor_fundo || '';
+    if (cfg.imagem) {
+      const img = document.createElement('img');
+      img.className = 'ilustracao';
+      img.src = cfg.imagem;
+      img.alt = '';
+      card.appendChild(img);
+    }
+  }
+  const t = document.createElement('div');
+  t.className = 'texto';
+  if (!comFundo) t.style.color = cfg.cor_texto || '';
+  t.textContent = cfg.texto;   // textContent: emojis ok, sem risco de injeção
+  card.appendChild(t);
+  mensagensEl.appendChild(card);
+  rolarParaFim();
+}
 
 // ---------------------------------------------------------------- init
 

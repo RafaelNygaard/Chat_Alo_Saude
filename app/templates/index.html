@@ -34,6 +34,29 @@
     </div>
   </header>
 
+  <!-- Pesquisa de satisfação (ao encerrar) -->
+  <div class="modal-overlay" id="modal-pesquisa" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pesquisa-titulo">
+      <h2 class="titulo" id="pesquisa-titulo">Como foi seu atendimento?</h2>
+      <p class="modal-sub">Sua avaliação ajuda a melhorar o Alô Saúde.</p>
+      <form id="form-pesquisa">
+        <fieldset class="notas" id="notas">
+          <legend>Nota de satisfação</legend>
+          <!-- botões 1..5 gerados no JS -->
+        </fieldset>
+        <label>Comentário (opcional)
+          <textarea id="pesquisa-comentario" rows="3" maxlength="500"
+                    placeholder="Conte o que podemos melhorar..."></textarea>
+        </label>
+        <p class="modal-erro" id="pesquisa-erro" role="alert" hidden></p>
+        <div class="modal-acoes">
+          <button type="button" class="btn secundario" id="pesquisa-pular">Pular</button>
+          <button type="submit" class="btn">Enviar e encerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Tela de login do profissional (ADR-003) -->
   <div class="modal-overlay" id="modal-login" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="login-titulo">

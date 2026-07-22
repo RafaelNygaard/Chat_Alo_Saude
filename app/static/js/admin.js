@@ -24,6 +24,7 @@ const SECOES = {
   unidades: renderUnidades,
   intents: renderIntents,
   topicos: renderTopicos,
+  encerramento: renderEncerramento,
   atendentes: renderAtendentes,
 };
 
@@ -52,7 +53,12 @@ async function renderRelatorios() {
       h('div', { class: 'card' }, h('div', { class: 'valor' }, String(r.total)), h('div', { class: 'rotulo' }, 'Total de atendimentos')));
     for (const [k, v] of Object.entries(r.por_status))
       cards.append(h('div', { class: 'card' }, h('div', { class: 'valor' }, String(v)), h('div', { class: 'rotulo' }, k)));
+    const sat = r.satisfacao || {};
+    cards.append(h('div', { class: 'card' },
+      h('div', { class: 'valor' }, sat.media != null ? `${sat.media} / 5` : '—'),
+      h('div', { class: 'rotulo' }, `Satisfação (${sat.respostas || 0} respostas)`)));
     alvo.append(cards);
+    alvo.append(tabelaSimples('Notas de satisfação', sat.distribuicao || {}));
     alvo.append(tabelaSimples('Por unidade', r.por_ubs));
     alvo.append(tabelaSimples('Por função', r.por_funcao));
     alvo.append(tabelaSimples('Handoffs por gatilho', r.handoffs_por_gatilho));
@@ -265,6 +271,109 @@ async function renderTopicos() {
     alvo.innerHTML = ''; alvo.append(t);
   }
   carregar();
+}
+
+// ------------------------------------------------- Mensagem de encerramento
+const EMOJIS = ['😊', '🙏', '💙', '🌟', '🩺', '✅', '👏', '🌻', '🤝', '💚'];
+
+async function renderEncerramento() {
+  main.innerHTML = '';
+  main.append(h('h2', { class: 'titulo' }, 'Mensagem de encerramento'));
+  main.append(h('p', { style: 'color:var(--cinza-texto);font-size:.86rem;margin-bottom:1rem;max-width:640px' },
+    'Exibida ao profissional depois que ele responde a pesquisa de satisfação. Aceita emojis, imagem e cores personalizadas.'));
+
+  const cfg = await api.get('/api/admin/encerramento');
+
+  const texto = h('textarea', { style: 'width:100%;min-height:90px' });
+  texto.value = cfg.texto || '';
+  const corFundo = h('input', { type: 'color', value: cfg.cor_fundo || '#e8f0fe' });
+  const corTexto = h('input', { type: 'color', value: cfg.cor_texto || '#071d41' });
+  const arquivo = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp' });
+  const comoFundo = h('input', { type: 'checkbox' });
+  comoFundo.checked = Boolean(cfg.imagem_como_fundo);
+  let imagemAtual = cfg.imagem || null;
+
+  // barra de emojis: insere no ponto do cursor
+  const barra = h('div', { style: 'display:flex;flex-wrap:wrap;gap:.3rem;margin:.4rem 0' },
+    ...EMOJIS.map((e) => h('button', {
+      class: 'btn mini secundario', type: 'button', title: `Inserir ${e}`,
+      onclick: () => {
+        const i = texto.selectionStart ?? texto.value.length;
+        texto.value = texto.value.slice(0, i) + e + texto.value.slice(texto.selectionEnd ?? i);
+        texto.focus();
+        texto.selectionStart = texto.selectionEnd = i + e.length;
+        previa();
+      },
+    }, e)));
+
+  const alvoPrevia = h('div');
+  function previa() {
+    alvoPrevia.innerHTML = '';
+    const card = h('div', { class: 'cartao-encerramento' });
+    const usaFundo = imagemAtual && comoFundo.checked;
+    if (usaFundo) {
+      card.classList.add('com-fundo');
+      card.style.backgroundImage = `url("${imagemAtual}")`;
+    } else {
+      card.style.background = corFundo.value;
+      if (imagemAtual) card.append(h('img', { class: 'ilustracao', src: imagemAtual, alt: '' }));
+    }
+    const t = h('div', { class: 'texto' }, texto.value);
+    if (!usaFundo) t.style.color = corTexto.value;
+    card.append(t);
+    alvoPrevia.append(card);
+  }
+  [texto, corFundo, corTexto].forEach((c) => c.addEventListener('input', previa));
+  comoFundo.addEventListener('change', previa);
+
+  const statusImg = h('span', { style: 'font-size:.8rem;color:var(--cinza-texto)' },
+    imagemAtual ? 'imagem definida' : 'sem imagem');
+
+  const form = h('div', { style: 'background:#fff;border:1px solid var(--cinza-borda);border-radius:8px;padding:1rem;max-width:660px' },
+    linha('Texto da mensagem (aceita emojis)', texto), barra,
+    h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap' },
+      linha('Cor de fundo', corFundo), linha('Cor do texto', corTexto)),
+    linha('Imagem (PNG/JPG/GIF/WEBP, até 2 MB)', arquivo),
+    h('label', { style: 'display:flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--azul-escuro);margin-bottom:.6rem' },
+      comoFundo, 'Usar a imagem como plano de fundo'),
+    h('div', { style: 'display:flex;gap:.5rem;align-items:center;margin-bottom:.8rem' },
+      h('button', {
+        class: 'btn mini secundario', onclick: async () => {
+          if (!arquivo.files?.[0]) return aviso('Selecione um arquivo primeiro.');
+          const fd = new FormData();
+          fd.append('imagem', arquivo.files[0]);
+          const r = await fetch('/api/admin/encerramento/imagem', { method: 'POST', body: fd });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) return aviso(j.erro || 'Falha no upload.');
+          imagemAtual = j.imagem;
+          statusImg.textContent = 'imagem enviada';
+          previa();
+        }
+      }, 'Enviar imagem'),
+      h('button', {
+        class: 'btn mini secundario', onclick: () => {
+          imagemAtual = null; arquivo.value = '';
+          statusImg.textContent = 'sem imagem';
+          previa();
+        }
+      }, 'Remover imagem'),
+      statusImg),
+    h('button', {
+      class: 'btn mini', onclick: async () => {
+        try {
+          await api.put('/api/admin/encerramento', {
+            texto: texto.value, cor_fundo: corFundo.value, cor_texto: corTexto.value,
+            imagem: imagemAtual, imagem_como_fundo: comoFundo.checked,
+          });
+          aviso('Mensagem de encerramento salva.');
+        } catch (e) { aviso('Falha ao salvar (o texto é obrigatório).'); }
+      }
+    }, 'Salvar'));
+
+  main.append(form);
+  main.append(h('h3', { class: 'titulo', style: 'margin:1.2rem 0 .5rem' }, 'Pré-visualização'));
+  main.append(alvoPrevia);
+  previa();
 }
 
 // -------------------------------------------------------------- Atendentes

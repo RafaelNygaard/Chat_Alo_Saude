@@ -116,6 +116,27 @@ class LogAcessoExterno(Base):
     executado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
+class PesquisaSatisfacao(Base):
+    __tablename__ = "pesquisas_satisfacao"
+    id = Column(Integer, primary_key=True)
+    conversa_id = Column(Integer, ForeignKey("conversas.id"), nullable=False, unique=True)
+    nota = Column(Integer, nullable=False)  # 1..5 (validado no DDL)
+    comentario = Column(Text)
+    criada_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class ConfigEncerramento(Base):
+    """Linha única (id=1): mensagem final configurável pelo admin."""
+    __tablename__ = "config_encerramento"
+    id = Column(Integer, primary_key=True)
+    texto = Column(Text, nullable=False)
+    imagem_caminho = Column(Text)
+    imagem_como_fundo = Column(Boolean, nullable=False, default=False)
+    cor_fundo = Column(Text, nullable=False, default="#e8f0fe")
+    cor_texto = Column(Text, nullable=False, default="#071d41")
+    atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class TopicoCritico(Base):
     __tablename__ = "topicos_criticos"
     id = Column(Integer, primary_key=True)

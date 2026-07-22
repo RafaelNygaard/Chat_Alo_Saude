@@ -124,15 +124,53 @@ def listar_chips():
     ])
 
 
-@bp.post("/conversas/<int:conversa_id>/encerrar")
-def encerrar_conversa(conversa_id: int):
+def _encerrar(conversa: Conversa) -> None:
+    if conversa.status != "encerrada":
+        conversa.status = "encerrada"
+        Session.commit()
+        repo.gravar_mensagem(conversa.id, "sistema", "Atendimento encerrado")
+
+
+@bp.get("/encerramento")
+def config_encerramento():
+    """Mensagem final configurada no admin (texto/emoji, imagem, cores)."""
+    return jsonify(repo.config_encerramento_json(repo.obter_config_encerramento()))
+
+
+@bp.post("/conversas/<int:conversa_id>/pesquisa")
+def responder_pesquisa(conversa_id: int):
+    """Registra a pesquisa de satisfação e encerra a conversa."""
+    dados = request.get_json(force=True)
+    try:
+        nota = int(dados.get("nota"))
+    except (TypeError, ValueError):
+        return jsonify({"erro": "nota obrigatória (1 a 5)"}), 400
+    if not 1 <= nota <= 5:
+        return jsonify({"erro": "nota deve estar entre 1 e 5"}), 400
+
     conversa = Session.get(Conversa, conversa_id)
     if conversa is None:
         return jsonify({"erro": "conversa não encontrada"}), 404
-    conversa.status = "encerrada"
-    Session.commit()
-    repo.gravar_mensagem(conversa_id, "sistema", "Atendimento encerrado")
-    return jsonify({"status": Conversa.STATUS_UI["encerrada"]})
+
+    repo.registrar_pesquisa(conversa_id, nota, dados.get("comentario"))
+    _encerrar(conversa)
+    return jsonify({
+        "status": Conversa.STATUS_UI["encerrada"],
+        "encerramento": repo.config_encerramento_json(repo.obter_config_encerramento()),
+    })
+
+
+@bp.post("/conversas/<int:conversa_id>/encerrar")
+def encerrar_conversa(conversa_id: int):
+    """Encerra sem pesquisa (usuário optou por pular)."""
+    conversa = Session.get(Conversa, conversa_id)
+    if conversa is None:
+        return jsonify({"erro": "conversa não encontrada"}), 404
+    _encerrar(conversa)
+    return jsonify({
+        "status": Conversa.STATUS_UI["encerrada"],
+        "encerramento": repo.config_encerramento_json(repo.obter_config_encerramento()),
+    })
 
 
 @bp.get("/conversas/<int:conversa_id>/stream")

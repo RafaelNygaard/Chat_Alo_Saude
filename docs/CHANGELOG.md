@@ -6,6 +6,31 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (11) — Pesquisa de satisfação + mensagem de encerramento configurável
+
+- **Schema** (migration `003_pesquisa_e_encerramento.sql` + `schema.sql` +
+  `models.py`): `pesquisas_satisfacao` (nota 1–5 + comentário, uma por conversa) e
+  `config_encerramento` (linha única: texto, imagem, `imagem_como_fundo`,
+  `cor_fundo`, `cor_texto`).
+- **Chat**: "Encerrar" passa pela **pesquisa de satisfação** (notas 1–5 com
+  emoji/rótulo + comentário opcional, ou "Pular"). Após responder, a conversa é
+  encerrada e exibe o **cartão de despedida** configurado. O cartão também
+  reaparece ao reabrir uma conversa encerrada.
+- **Endpoints**: `POST /api/conversas/<id>/pesquisa` (grava e encerra),
+  `GET /api/encerramento` (público, para o chat); `/encerrar` agora também
+  devolve a mensagem final.
+- **Admin → "Mensagem de encerramento"**: edita o texto (com barra de emojis),
+  cores de fundo/texto, **upload de imagem** (PNG/JPG/GIF/WEBP, até 2 MB) e opção
+  de usar a imagem como **plano de fundo**, com **pré-visualização** ao vivo.
+- **Relatórios**: card de satisfação (média + nº de respostas) e distribuição de
+  notas no período.
+- Uploads salvos em `app/static/uploads/` (fora do banco, conforme Decisão F do
+  ADR-001) e **ignorados pelo git**; nome de arquivo é gerado, nunca o do usuário.
+- Testes: `tests/test_pesquisa_encerramento.py` — **54 no total**. Verificado no
+  navegador: pesquisa, cartão final, edição/salvamento no admin e relatório.
+
+---
+
 ## 2026-07-21 (10) — Tela de login do profissional + botão "Cadastrar usuário"
 
 - **Novo endpoint** `POST /api/servidores/login` (e-mail **ou** matrícula +

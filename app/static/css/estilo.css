@@ -113,6 +113,46 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
 .modal-acoes { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .4rem; }
 @media (max-width: 480px) { .modal .linha-campos { flex-direction: column; gap: 0; } }
 
+/* -------- Pesquisa de satisfação -------- */
+.modal .notas { border: none; margin-bottom: .9rem; }
+.modal .notas legend {
+  font-size: .82rem; font-weight: 600; color: var(--azul-escuro); margin-bottom: .4rem;
+}
+.notas-botoes { display: flex; gap: .5rem; }
+.nota-btn {
+  flex: 1; padding: .6rem .2rem; border: 1px solid var(--cinza-borda);
+  border-radius: 8px; background: var(--branco); cursor: pointer;
+  font: inherit; font-size: 1.15rem; line-height: 1.2;
+}
+.nota-btn:hover { border-color: var(--azul-govbr); background: var(--azul-claro); }
+.nota-btn[aria-pressed="true"] {
+  border-color: var(--azul-govbr); background: var(--azul-claro);
+  box-shadow: inset 0 0 0 2px var(--azul-govbr); font-weight: 700;
+}
+.nota-btn .rotulo { display: block; font-size: .62rem; color: var(--cinza-texto); }
+.modal textarea {
+  width: 100%; margin-top: .3rem; padding: .55rem .7rem; font: inherit; font-size: .92rem;
+  border: 1px solid var(--cinza-borda); border-radius: 6px; resize: vertical;
+}
+
+/* -------- Cartão de encerramento (mensagem final configurável) -------- */
+.cartao-encerramento {
+  margin: 1rem auto; padding: 1.4rem 1.6rem; max-width: 560px;
+  border-radius: 12px; text-align: center;
+  background-size: cover; background-position: center;
+  border: 1px solid var(--cinza-borda);
+}
+.cartao-encerramento .texto {
+  font-family: "Outfit", sans-serif; font-size: 1.05rem; font-weight: 600;
+  white-space: pre-wrap; word-break: break-word;
+}
+.cartao-encerramento img.ilustracao {
+  max-width: 100%; max-height: 180px; border-radius: 8px; margin-bottom: .8rem;
+}
+.cartao-encerramento.com-fundo .texto {
+  background: rgba(0, 0, 0, .45); color: #fff; padding: .7rem 1rem; border-radius: 8px;
+}
+
 /* -------- Login -------- */
 .login-tela { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .login-card {
