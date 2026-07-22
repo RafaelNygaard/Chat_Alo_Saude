@@ -133,9 +133,13 @@ def listar_chips():
 
 def _encerrar(conversa: Conversa) -> None:
     if conversa.status != "encerrada":
+        atendente_id = conversa.atendente_id
         conversa.status = "encerrada"
         Session.commit()
         repo.gravar_mensagem(conversa.id, "sistema", "Atendimento encerrado")
+        # Libera o atendente e o envia ao fim da fila (distribuição balanceada)
+        if atendente_id:
+            repo.liberar_atendente(atendente_id)
 
 
 @bp.get("/encerramento")

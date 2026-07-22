@@ -85,6 +85,8 @@ class AtendenteStatus(Base):
     atendente_id = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
     status = Column(Text, nullable=False, default="ausente")  # disponivel|ocupado|ausente
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+    # Ordena a fila round-robin: quem encerra vai para o fim (NULL = nunca atendeu)
+    ultimo_encerramento_em = Column(DateTime(timezone=True))
 
 
 class FaqIntent(Base):

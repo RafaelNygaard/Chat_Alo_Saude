@@ -43,6 +43,7 @@ $env:PGPASSWORD='senha'
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\002_identificacao_e_admin.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\003_pesquisa_e_encerramento.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\004_funcao_atendente_chat.sql
+& $psql -U alosaude -h localhost -d alosaude -f db\migrations\005_fila_round_robin.sql
 ```
 
 > Nota: `schema.sql` já inclui a tabela `funcoes` e as colunas novas de

@@ -1,7 +1,7 @@
 """Repositórios: ponte entre orquestrador/handoff e o PostgreSQL."""
 from datetime import datetime
 
-from sqlalchemy import or_, text
+from sqlalchemy import func, or_, text
 
 from app.db import Session
 from app.models import (
@@ -15,6 +15,22 @@ TEXTO_ENCERRAMENTO_PADRAO = (
 
 # Função cujo titular opera a fila: ao logar, vai direto ao painel do atendente.
 FUNCAO_ATENDENTE_CHAT = "Atendente chat"
+
+# Sentinela para ordenar quem nunca encerrou um atendimento no início da fila.
+EPOCH = datetime(1970, 1, 1)
+
+
+def liberar_atendente(atendente_id: int) -> None:
+    """Encerrou um atendimento: volta a ficar disponível e vai para o FIM da fila."""
+    row = Session.get(AtendenteStatus, atendente_id)
+    if row is None:
+        return
+    agora = datetime.utcnow()
+    row.ultimo_encerramento_em = agora   # manda para o fim da fila
+    row.atualizado_em = agora
+    if row.status == "ocupado":          # respeita quem se marcou 'ausente'
+        row.status = "disponivel"
+    Session.commit()
 
 
 def destino_pos_login(u: Usuario) -> str | None:
@@ -161,10 +177,19 @@ class SqlHandoffRepository:
     """Implementação do HandoffRepository (Protocol) sobre o banco."""
 
     def atendentes_disponiveis(self) -> list[int]:
+        """Fila round-robin dos atendentes disponíveis.
+
+        Ordem: quem há mais tempo não encerra um atendimento vem primeiro; quem
+        acabou de encerrar vai para o fim. `coalesce` põe quem nunca atendeu na
+        frente (e evita depender de NULLS FIRST, que varia entre bancos).
+        """
         rows = (
             Session.query(AtendenteStatus)
             .filter_by(status="disponivel")
-            .order_by(AtendenteStatus.atualizado_em)
+            .order_by(
+                func.coalesce(AtendenteStatus.ultimo_encerramento_em, EPOCH),
+                AtendenteStatus.atendente_id,   # desempate estável
+            )
             .all()
         )
         return [r.atendente_id for r in rows]

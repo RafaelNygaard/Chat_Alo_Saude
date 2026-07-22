@@ -105,11 +105,14 @@ CREATE TABLE anexos (
 -- ---------------------------------------------------------------
 -- 6. atendentes_status
 -- ---------------------------------------------------------------
+-- ultimo_encerramento_em ordena a fila round-robin: quem encerra vai para o fim
+-- (NULL = ainda não atendeu, portanto vem na frente).
 CREATE TABLE atendentes_status (
-    atendente_id  INTEGER PRIMARY KEY REFERENCES usuarios(id),
-    status        TEXT NOT NULL DEFAULT 'ausente'
-                  CHECK (status IN ('disponivel', 'ocupado', 'ausente')),
-    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+    atendente_id           INTEGER PRIMARY KEY REFERENCES usuarios(id),
+    status                 TEXT NOT NULL DEFAULT 'ausente'
+                           CHECK (status IN ('disponivel', 'ocupado', 'ausente')),
+    atualizado_em          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ultimo_encerramento_em TIMESTAMPTZ
 );
 
 -- ---------------------------------------------------------------

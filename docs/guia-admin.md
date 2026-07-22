@@ -28,6 +28,18 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 | **Tópicos críticos** | Termos que forçam handoff (Decisão B do ADR-001). |
 | **Atendentes** | Ajusta a disponibilidade (disponível/ocupado/ausente). |
 
+## Fila de atendentes (distribuição balanceada)
+
+Quando um profissional pede atendimento humano, o sistema procura um atendente
+com status **disponível** e transfere na hora. A ordem é um **rodízio**:
+
+1. Quem **nunca** atendeu vem primeiro.
+2. Quem **encerra** um atendimento vai para o **fim** da fila.
+
+Assim a carga fica equilibrada. Ao encerrar, o atendente volta automaticamente
+para `disponível` — exceto se ele mesmo tiver se marcado como `ausente`, que é
+respeitado. Quem está `ocupado` ou `ausente` fica fora da fila.
+
 ## Função "Atendente chat"
 
 Profissionais cadastrados com a **função** `Atendente chat` são levados direto ao

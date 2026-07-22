@@ -6,6 +6,26 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-22 (15) — Fila de atendentes com distribuição balanceada (round-robin)
+
+- **Bug corrigido (bloqueante):** `atribuir()` marcava o atendente como `ocupado`
+  e **nada revertia** — cada atendente atendia uma conversa e ficava ocupado para
+  sempre, drenando o pool. Agora `_encerrar()` chama
+  `repositories.liberar_atendente()`, que devolve ao status `disponivel`.
+- **Round-robin** (migration `005`): nova coluna
+  `atendentes_status.ultimo_encerramento_em`. Quem encerra vai para o **fim da
+  fila**; quem nunca atendeu vem primeiro (`coalesce` com epoch, sem depender de
+  `NULLS FIRST`). Desempate estável por `atendente_id`.
+- `liberar_atendente` **respeita quem se marcou `ausente`** — só reativa quem
+  estava `ocupado`, para não puxar de volta alguém fora do expediente.
+- Vale para os dois caminhos de encerramento (com e sem pesquisa de satisfação).
+- Testes: `tests/test_fila_atendentes.py` (8 casos, incluindo rodízio de 6
+  atendimentos entre 3 atendentes) — **69 no total**.
+- Verificado no sistema real: 8 solicitações entre 4 atendentes → **2 para cada**,
+  em ordem cíclica.
+
+---
+
 ## 2026-07-21 (14) — Função "Atendente chat" entra direto no painel
 
 - Nova função **"Atendente chat"** (migration `004` + seed do `schema.sql`).
