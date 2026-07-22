@@ -28,6 +28,7 @@ PAPEIS = ("servidor", "enfermeiro", "atendente", "admin")
 # Upload da imagem da mensagem de encerramento (Decisão F do ADR-001: arquivo
 # fora do banco, caminho na tabela; tipo e tamanho validados).
 EXT_IMAGEM = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+EXT_LOGO = EXT_IMAGEM | {".svg", ".ico"}   # logo aceita também vetor/ícone
 TAM_MAX_IMAGEM = 2 * 1024 * 1024  # 2 MB
 
 
@@ -302,6 +303,56 @@ def atendentes_status(aid):
     row.atualizado_em = datetime.utcnow()
     Session.commit()
     return jsonify({"atendente_id": aid, "status": status})
+
+
+# ==================================================== Cabeçalho / identidade
+@bp.get("/admin/cabecalho")
+@admin_required
+def cabecalho_obter():
+    return jsonify(repo.config_cabecalho_json(repo.obter_config_cabecalho()))
+
+
+@bp.put("/admin/cabecalho")
+@admin_required
+def cabecalho_salvar():
+    d = request.get_json(force=True)
+    cfg = repo.obter_config_cabecalho()
+    for campo, chave in (("titulo", "titulo"), ("subtitulo", "subtitulo"),
+                         ("orgao", "orgao"), ("cor_fundo", "cor_fundo")):
+        valor = (d.get(chave) or "").strip()
+        if valor:
+            setattr(cfg, campo, valor)
+    if "logo" in d:                       # None/"" volta ao "+" padrão
+        cfg.logo_caminho = d["logo"] or None
+    cfg.atualizado_em = datetime.utcnow()
+    Session.commit()
+    return jsonify(repo.config_cabecalho_json(cfg))
+
+
+@bp.post("/admin/cabecalho/logo")
+@admin_required
+def cabecalho_logo():
+    arquivo = request.files.get("logo")
+    if arquivo is None or not arquivo.filename:
+        return jsonify({"erro": "envie um arquivo de imagem"}), 400
+    ext = os.path.splitext(arquivo.filename)[1].lower()
+    if ext not in EXT_LOGO:
+        return jsonify({"erro": f"formato não suportado ({', '.join(sorted(EXT_LOGO))})"}), 400
+    dados = arquivo.read()
+    if len(dados) > TAM_MAX_IMAGEM:
+        return jsonify({"erro": "imagem acima de 2 MB"}), 400
+
+    destino = os.path.join(current_app.static_folder, "uploads")
+    os.makedirs(destino, exist_ok=True)
+    nome = f"logo_{int(time.time())}{ext}"     # nome gerado, nunca o do usuário
+    with open(os.path.join(destino, nome), "wb") as saida:
+        saida.write(dados)
+
+    cfg = repo.obter_config_cabecalho()
+    cfg.logo_caminho = f"/static/uploads/{nome}"
+    cfg.atualizado_em = datetime.utcnow()
+    Session.commit()
+    return jsonify({"logo": cfg.logo_caminho})
 
 
 # ============================================== Mensagem de encerramento

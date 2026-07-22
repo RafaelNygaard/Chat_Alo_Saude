@@ -19,6 +19,7 @@ const aviso = (msg) => { const p = h('p', { class: 'modal-erro' }, msg); main.pr
 // -------------------------------------------------------------- navegação
 const SECOES = {
   relatorios: renderRelatorios,
+  cabecalho: renderCabecalho,
   servidores: renderServidores,
   funcoes: renderFuncoes,
   unidades: renderUnidades,
@@ -271,6 +272,86 @@ async function renderTopicos() {
     alvo.innerHTML = ''; alvo.append(t);
   }
   carregar();
+}
+
+// ------------------------------------------------------ Cabeçalho e logo
+async function renderCabecalho() {
+  main.innerHTML = '';
+  main.append(h('h2', { class: 'titulo' }, 'Cabeçalho e logo'));
+  main.append(h('p', { style: 'color:var(--cinza-texto);font-size:.86rem;margin-bottom:1rem;max-width:640px' },
+    'Identidade exibida no topo de todas as telas. O subtítulo aparece no chat; os painéis internos mantêm o próprio rótulo ("Painel do Atendente", "Console técnico-administrativo").'));
+
+  const cfg = await api.get('/api/admin/cabecalho');
+  const titulo = h('input', { type: 'text', value: cfg.titulo || '', style: 'width:100%' });
+  const subtitulo = h('input', { type: 'text', value: cfg.subtitulo || '', style: 'width:100%' });
+  const orgao = h('input', { type: 'text', value: cfg.orgao || '', style: 'width:100%' });
+  const cor = h('input', { type: 'color', value: cfg.cor_fundo || '#1351b4' });
+  const arquivo = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/x-icon' });
+  let logoAtual = cfg.logo || null;
+
+  const alvoPrevia = h('div');
+  function previa() {
+    alvoPrevia.innerHTML = '';
+    const barra = h('div', { class: 'barra-gov' },
+      h('span', {}, h('strong', {}, orgao.value), ' | Sistema ', titulo.value));
+    const cab = h('div', { class: 'cabecalho' },
+      h('div', { class: 'marca' },
+        logoAtual ? h('img', { class: 'logo-icone', src: logoAtual, alt: '' })
+                  : h('div', { class: 'logo-icone sem-imagem' }, '+'),
+        h('div', {},
+          h('div', { class: 'titulo' }, h('strong', {}, titulo.value)),
+          h('div', { class: 'subtitulo' }, subtitulo.value))));
+    cab.style.background = cor.value;
+    alvoPrevia.append(h('div', { style: 'max-width:640px;border:1px solid var(--cinza-borda);border-radius:8px;overflow:hidden' }, barra, cab));
+  }
+  [titulo, subtitulo, orgao, cor].forEach((c) => c.addEventListener('input', previa));
+
+  const statusLogo = h('span', { style: 'font-size:.8rem;color:var(--cinza-texto)' },
+    logoAtual ? 'logo definido' : 'sem logo (usa o "+")');
+
+  main.append(h('div', { style: 'background:#fff;border:1px solid var(--cinza-borda);border-radius:8px;padding:1rem;max-width:660px' },
+    linha('Título', titulo),
+    linha('Subtítulo (tela do chat)', subtitulo),
+    linha('Órgão (barra superior)', orgao),
+    linha('Cor de fundo do cabeçalho', cor),
+    linha('Logo (PNG/JPG/GIF/WEBP/SVG/ICO, até 2 MB)', arquivo),
+    h('div', { style: 'display:flex;gap:.5rem;align-items:center;margin-bottom:.8rem' },
+      h('button', {
+        class: 'btn mini secundario', onclick: async () => {
+          if (!arquivo.files?.[0]) return aviso('Selecione um arquivo primeiro.');
+          const fd = new FormData();
+          fd.append('logo', arquivo.files[0]);
+          const r = await fetch('/api/admin/cabecalho/logo', { method: 'POST', body: fd });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) return aviso(j.erro || 'Falha no upload.');
+          logoAtual = j.logo;
+          statusLogo.textContent = 'logo enviado';
+          previa();
+        }
+      }, 'Enviar logo'),
+      h('button', {
+        class: 'btn mini secundario', onclick: () => {
+          logoAtual = null; arquivo.value = '';
+          statusLogo.textContent = 'sem logo (usa o "+")';
+          previa();
+        }
+      }, 'Remover logo'),
+      statusLogo),
+    h('button', {
+      class: 'btn mini', onclick: async () => {
+        try {
+          await api.put('/api/admin/cabecalho', {
+            titulo: titulo.value, subtitulo: subtitulo.value, orgao: orgao.value,
+            cor_fundo: cor.value, logo: logoAtual,
+          });
+          aviso('Cabeçalho salvo. Recarregue as telas para ver a mudança.');
+        } catch (e) { aviso('Falha ao salvar o cabeçalho.'); }
+      }
+    }, 'Salvar')));
+
+  main.append(h('h3', { class: 'titulo', style: 'margin:1.2rem 0 .5rem' }, 'Pré-visualização'));
+  main.append(alvoPrevia);
+  previa();
 }
 
 // ------------------------------------------------- Mensagem de encerramento

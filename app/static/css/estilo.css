@@ -65,9 +65,14 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
   align-items: center;
 }
 .cabecalho .marca { display: flex; align-items: center; gap: .8rem; }
+/* Logo do cabeçalho: <img> quando há imagem configurada; quadrado "+" como
+   fallback (ver seção "Cabeçalho" da área administrativa). */
 .logo-icone {
-  background: var(--amarelo); color: var(--azul-escuro);
   border-radius: 8px; width: 40px; height: 40px;
+  object-fit: contain; background: var(--branco); flex: none;
+}
+.logo-icone.sem-imagem {
+  background: var(--amarelo); color: var(--azul-escuro);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 1.2rem;
 }

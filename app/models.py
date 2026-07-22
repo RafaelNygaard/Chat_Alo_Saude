@@ -139,6 +139,18 @@ class ConfigEncerramento(Base):
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
+class ConfigCabecalho(Base):
+    """Linha única (id=1): logo e identidade do cabeçalho, editáveis no admin."""
+    __tablename__ = "config_cabecalho"
+    id = Column(Integer, primary_key=True)
+    logo_caminho = Column(Text)
+    titulo = Column(Text, nullable=False, default="Alô Saúde")
+    subtitulo = Column(Text, nullable=False, default="Central de Apoio à Atenção Básica")
+    orgao = Column(Text, nullable=False, default="Prefeitura de Poços de Caldas - SMS")
+    cor_fundo = Column(Text, nullable=False, default="#1351b4")
+    atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class TopicoCritico(Base):
     __tablename__ = "topicos_criticos"
     id = Column(Integer, primary_key=True)

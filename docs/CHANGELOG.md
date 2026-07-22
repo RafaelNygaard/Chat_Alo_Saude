@@ -6,6 +6,27 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-22 (17) — Logo no cabeçalho + edição da identidade no admin
+
+- O quadrado amarelo com "+" foi substituído pelo **logo oficial do Alô Saúde**
+  em todas as telas (chat, painel do atendente, login e console admin).
+- O arquivo entregue era `.ico` de 256×256 (264 KB). Convertido para **PNG
+  (63,7 KB)** com um script Python puro (`zlib`), **sem adicionar dependência**
+  ao projeto — o ícone embutia um BMP, não um PNG extraível. Resultado em
+  `app/static/img/logo-alo-saude.png` (versionado).
+- **Cabeçalho configurável** (migration `006` + `config_cabecalho`, linha única):
+  logo, título, órgão da barra superior, cor de fundo e subtítulo.
+- Renderizado **no servidor** via `context_processor` — sem "piscada" do conteúdo
+  padrão e funcionando sem JavaScript. Se o banco estiver fora, cai no padrão e a
+  página ainda abre.
+- **Admin → "Cabeçalho e logo"**: edição dos campos, upload de logo e
+  pré-visualização ao vivo do cabeçalho real. Remover o logo volta ao "+".
+- Decisão: o **subtítulo** configurável vale para a tela do chat; os painéis
+  internos mantêm o rótulo que identifica a tela.
+- Testes: `tests/test_cabecalho.py` (8 casos) — **82 no total**.
+
+---
+
 ## 2026-07-22 (16) — Correção: mensagens repetindo em ciclo no chat
 
 **Sintoma:** mensagens do usuário, do bot, o divisor de transferência e o

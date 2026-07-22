@@ -10,17 +10,21 @@
 </head>
 <body>
   <div class="barra-gov">
-    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Área administrativa</span>
+    <span><strong>{{ cabecalho.orgao }}</strong> &nbsp;|&nbsp; Área administrativa</span>
     <span>
       <button type="button" id="btn-contraste" aria-pressed="false">Alto Contraste</button>
     </span>
   </div>
 
-  <header class="cabecalho">
+  <header class="cabecalho" style="background: {{ cabecalho.cor_fundo }}">
     <div class="marca">
-      <div class="logo-icone" aria-hidden="true">+</div>
+      {% if cabecalho.logo %}
+        <img class="logo-icone" src="{{ cabecalho.logo }}" alt="{{ cabecalho.titulo }}">
+      {% else %}
+        <div class="logo-icone sem-imagem" aria-hidden="true">+</div>
+      {% endif %}
       <div>
-        <div class="titulo"><strong>Alô Saúde</strong></div>
+        <div class="titulo"><strong>{{ cabecalho.titulo }}</strong></div>
         <div class="subtitulo">Console técnico-administrativo</div>
       </div>
     </div>
@@ -34,6 +38,7 @@
     <nav class="admin-nav" aria-label="Seções">
       <div class="grupo">Visão geral</div>
       <button data-secao="relatorios" class="ativa">Relatórios</button>
+      <button data-secao="cabecalho">Cabeçalho e logo</button>
       <div class="grupo">Cadastros</div>
       <button data-secao="servidores">Servidores</button>
       <button data-secao="funcoes">Funções</button>

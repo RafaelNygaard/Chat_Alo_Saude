@@ -10,15 +10,19 @@
 </head>
 <body>
   <div class="barra-gov">
-    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Sistema Alô Saúde</span>
+    <span><strong>{{ cabecalho.orgao }}</strong> &nbsp;|&nbsp; Sistema {{ cabecalho.titulo }}</span>
   </div>
 
   <div class="login-tela">
     <form class="login-card" id="form-login">
       <div class="marca">
-        <div class="logo-icone" aria-hidden="true">+</div>
+        {% if cabecalho.logo %}
+          <img class="logo-icone" src="{{ cabecalho.logo }}" alt="{{ cabecalho.titulo }}">
+        {% else %}
+          <div class="logo-icone sem-imagem" aria-hidden="true">+</div>
+        {% endif %}
         <div>
-          <div class="titulo"><strong>Alô Saúde</strong></div>
+          <div class="titulo"><strong>{{ cabecalho.titulo }}</strong></div>
           <div class="subtitulo">Acesso administrativo</div>
         </div>
       </div>

@@ -181,6 +181,22 @@ INSERT INTO config_encerramento (id, texto) VALUES
     (1, 'A equipe do Alô Saúde agradece seu contato e deseja uma ótima semana!');
 
 -- ---------------------------------------------------------------
+-- 13. config_cabecalho  (linha única; logo e identidade do cabeçalho)
+-- ---------------------------------------------------------------
+CREATE TABLE config_cabecalho (
+    id            SERIAL PRIMARY KEY,
+    logo_caminho  TEXT,
+    titulo        TEXT NOT NULL DEFAULT 'Alô Saúde',
+    subtitulo     TEXT NOT NULL DEFAULT 'Central de Apoio à Atenção Básica',
+    orgao         TEXT NOT NULL DEFAULT 'Prefeitura de Poços de Caldas - SMS',
+    cor_fundo     TEXT NOT NULL DEFAULT '#1351b4',
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO config_cabecalho (id, logo_caminho) VALUES
+    (1, '/static/img/logo-alo-saude.png');
+
+-- ---------------------------------------------------------------
 -- Palavras-chave de tópicos críticos (Decisão B: em tabela, não em código)
 -- ---------------------------------------------------------------
 CREATE TABLE topicos_criticos (

@@ -20,6 +20,7 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 | Seção | O que faz |
 |-------|-----------|
 | **Relatórios** | Total de atendimentos e quebras por status, unidade, função e handoff por gatilho no período; **satisfação** (média, nº de respostas e distribuição de notas). Botão **Exportar CSV** (`;` como separador). |
+| **Cabeçalho e logo** | Logo exibido no topo de todas as telas (PNG/JPG/GIF/WEBP/SVG/ICO até 2 MB), título, órgão da barra superior e cor de fundo do cabeçalho. O **subtítulo** vale para a tela do chat; os painéis internos mantêm o próprio rótulo ("Painel do Atendente", "Console técnico-administrativo"). Tem pré-visualização ao vivo. |
 | **Mensagem de encerramento** | Texto exibido após a pesquisa de satisfação. Aceita **emojis** (barra de atalho), **imagem** (PNG/JPG/GIF/WEBP até 2 MB), **cores** de fundo e texto, e opção de usar a imagem como **plano de fundo**. Tem pré-visualização ao vivo. |
 | **Servidores** | Lista/filtra usuários por papel; cria e edita (inclusive definir senha para papéis com login). |
 | **Funções** | Cadastra e ativa/desativa as funções do combo do popup. |

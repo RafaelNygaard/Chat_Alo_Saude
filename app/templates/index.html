@@ -11,7 +11,7 @@
 <body>
   <!-- Barra gov.br -->
   <div class="barra-gov">
-    <span><strong>Prefeitura de Poços de Caldas - SMS</strong> &nbsp;|&nbsp; Sistema Alô Saúde</span>
+    <span><strong>{{ cabecalho.orgao }}</strong> &nbsp;|&nbsp; Sistema {{ cabecalho.titulo }}</span>
     <span>
       <button type="button" onclick="window.vlibrasAtivar && vlibrasAtivar()">VLibras</button>
       <button type="button" id="btn-contraste" aria-pressed="false">Alto Contraste</button>
@@ -19,12 +19,16 @@
   </div>
 
   <!-- Cabeçalho -->
-  <header class="cabecalho">
+  <header class="cabecalho" style="background: {{ cabecalho.cor_fundo }}">
     <div class="marca">
-      <div class="logo-icone" aria-hidden="true">+</div>
+      {% if cabecalho.logo %}
+        <img class="logo-icone" src="{{ cabecalho.logo }}" alt="{{ cabecalho.titulo }}">
+      {% else %}
+        <div class="logo-icone sem-imagem" aria-hidden="true">+</div>
+      {% endif %}
       <div>
-        <div class="titulo"><strong>Alô Saúde</strong></div>
-        <div class="subtitulo">Central de Apoio à Atenção Básica</div>
+        <div class="titulo"><strong>{{ cabecalho.titulo }}</strong></div>
+        <div class="subtitulo">{{ cabecalho.subtitulo }}</div>
       </div>
     </div>
     <div class="identidade" id="identidade">

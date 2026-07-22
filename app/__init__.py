@@ -29,4 +29,20 @@ def create_app(config_object=Config) -> Flask:
     from app.pages import bp as pages_bp
     app.register_blueprint(pages_bp)
 
+    @app.context_processor
+    def injetar_cabecalho():
+        """Cabeçalho (logo/identidade) disponível em todos os templates.
+
+        Renderizado no servidor para não haver "piscada" do conteúdo padrão.
+        Se o banco estiver indisponível, cai no padrão e a página ainda abre.
+        """
+        from app import repositories as repo
+        from app.db import Session
+        try:
+            return {"cabecalho": repo.config_cabecalho_json(
+                repo.obter_config_cabecalho())}
+        except Exception:
+            Session.rollback()
+            return {"cabecalho": repo.CABECALHO_PADRAO}
+
     return app

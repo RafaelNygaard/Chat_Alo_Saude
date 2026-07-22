@@ -5,8 +5,8 @@ from sqlalchemy import func, or_, text
 
 from app.db import Session
 from app.models import (
-    AtendenteStatus, ConfigEncerramento, Conversa, FaqIntent, Funcao, Handoff,
-    Mensagem, PesquisaSatisfacao, TopicoCritico, UBS, Usuario,
+    AtendenteStatus, ConfigCabecalho, ConfigEncerramento, Conversa, FaqIntent,
+    Funcao, Handoff, Mensagem, PesquisaSatisfacao, TopicoCritico, UBS, Usuario,
 )
 
 TEXTO_ENCERRAMENTO_PADRAO = (
@@ -46,6 +46,32 @@ def garantir_status_atendente(usuario_id: int, status: str = "disponivel") -> No
         Session.add(AtendenteStatus(atendente_id=usuario_id, status=status))
         Session.commit()
 from app.nlp.rules_engine import IntentDef
+
+
+# ------------------------------------------------------------- cabeçalho
+CABECALHO_PADRAO = {
+    "logo": "/static/img/logo-alo-saude.png",
+    "titulo": "Alô Saúde",
+    "subtitulo": "Central de Apoio à Atenção Básica",
+    "orgao": "Prefeitura de Poços de Caldas - SMS",
+    "cor_fundo": "#1351b4",
+}
+
+
+def obter_config_cabecalho() -> ConfigCabecalho:
+    """Config de linha única (id=1). Cria com o padrão se ainda não existir."""
+    cfg = Session.get(ConfigCabecalho, 1)
+    if cfg is None:
+        cfg = ConfigCabecalho(id=1, logo_caminho=CABECALHO_PADRAO["logo"])
+        Session.add(cfg)
+        Session.commit()
+    return cfg
+
+
+def config_cabecalho_json(cfg: ConfigCabecalho) -> dict:
+    return {"logo": cfg.logo_caminho, "titulo": cfg.titulo,
+            "subtitulo": cfg.subtitulo, "orgao": cfg.orgao,
+            "cor_fundo": cfg.cor_fundo}
 
 
 # --------------------------------------------- pesquisa / mensagem de encerramento
