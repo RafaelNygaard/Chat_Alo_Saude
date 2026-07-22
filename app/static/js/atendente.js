@@ -11,7 +11,18 @@ let conversaAtual = null;
 let stream = null;
 const afterRef = { valor: 0 };
 
-el('atendente-info').textContent = `Matrícula ${ATENDENTE_ID}`;
+// Identifica o atendente e reflete a disponibilidade real gravada no banco
+async function carregarIdentidade() {
+  try {
+    const s = await api.get(`/api/atendente/${ATENDENTE_ID}/status`);
+    el('atendente-info').textContent = s.nome
+      ? `${s.nome}${s.matricula ? ` · ${s.matricula}` : ''}`
+      : `Atendente ${ATENDENTE_ID}`;
+    el('sel-status').value = s.status;
+  } catch (e) {
+    el('atendente-info').textContent = `Atendente ${ATENDENTE_ID}`;
+  }
+}
 
 // ---------------------------------------------------------------- status
 
@@ -160,6 +171,7 @@ el('btn-encerrar').addEventListener('click', async () => {
 
 // ---------------------------------------------------------------- init
 
+carregarIdentidade();
 carregarFila();
 carregarMinhas();
 setInterval(carregarFila, 5000);   // fila atualiza por polling leve

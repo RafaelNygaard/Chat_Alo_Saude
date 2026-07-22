@@ -28,6 +28,7 @@ def app():
     Base.metadata.create_all(engine)
     # dados mínimos para os combos/identificação
     Session.add_all([Funcao(id=1, nome="Enfermeiro(a)"),
+                     Funcao(id=2, nome="Atendente chat"),
                      UBS(id=1, nome="UBS Centro", municipio="Poços de Caldas")])
     Session.commit()
     yield app
@@ -120,6 +121,34 @@ def test_login_servidor_nao_cria_usuario(client):
     antes = Session.query(Usuario).count()
     client.post("/api/servidores/login", json={"identificador": "novo@ex.com", "senha": "x"})
     assert Session.query(Usuario).count() == antes  # login nunca cadastra
+
+
+# --------------------------------- função "Atendente chat" -> painel do atendente
+def test_atendente_chat_redireciona_no_login(client):
+    uid = client.post("/api/servidores/identificar",
+                      json=_dados_servidor(funcao_id=2)).get_json()["usuario_id"]
+    j = client.post("/api/servidores/login",
+                    json={"identificador": "M1", "senha": "segredo1"}).get_json()
+    assert j["funcao"] == "Atendente chat"
+    assert j["redirecionar"] == f"/atendente?atendente_id={uid}"
+
+
+def test_atendente_chat_redireciona_ja_no_cadastro(client):
+    j = client.post("/api/servidores/identificar", json=_dados_servidor(funcao_id=2)).get_json()
+    assert j["redirecionar"] == f"/atendente?atendente_id={j['usuario_id']}"
+
+
+def test_atendente_chat_entra_na_disponibilidade(client):
+    from app.models import AtendenteStatus
+    uid = client.post("/api/servidores/identificar",
+                      json=_dados_servidor(funcao_id=2)).get_json()["usuario_id"]
+    st = Session.get(AtendenteStatus, uid)
+    assert st is not None and st.status == "disponivel"  # passa a receber da fila
+
+
+def test_outra_funcao_nao_redireciona(client):
+    j = client.post("/api/servidores/identificar", json=_dados_servidor(funcao_id=1)).get_json()
+    assert j["redirecionar"] is None  # segue para o chat normal
 
 
 # ---------------------------------------------------------- autenticação

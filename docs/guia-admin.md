@@ -28,6 +28,17 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 | **Tópicos críticos** | Termos que forçam handoff (Decisão B do ADR-001). |
 | **Atendentes** | Ajusta a disponibilidade (disponível/ocupado/ausente). |
 
+## Função "Atendente chat"
+
+Profissionais cadastrados com a **função** `Atendente chat` são levados direto ao
+**painel do atendente** (`/atendente`) ao fazer login — não passam pelo chat. Ao
+entrar, eles são incluídos na disponibilidade da fila (status inicial
+*disponível*), podendo alterar no próprio painel.
+
+Para transformar alguém em atendente de chat: **Servidores → Editar → Função =
+"Atendente chat"**. Note que `função` é o cargo; o `papel` (abaixo) continua
+controlando o acesso ao console administrativo.
+
 ## Papéis (campo `papel`)
 
 - `servidor` — quem solicita atendimento pelo popup (sem login).

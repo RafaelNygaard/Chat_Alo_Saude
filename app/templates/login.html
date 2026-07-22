@@ -37,17 +37,20 @@
   <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
   <script>
     'use strict';
-    const proximo = new URLSearchParams(location.search).get('next') || '/admin';
+    const proximo = new URLSearchParams(location.search).get('next');
     document.getElementById('form-login').addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const erro = document.getElementById('login-erro');
       erro.hidden = true;
       try {
-        await api.post('/api/login', {
+        const s = await api.post('/api/login', {
           identificador: document.getElementById('login-id').value.trim(),
           senha: document.getElementById('login-senha').value,
         });
-        location.href = proximo;
+        // admin -> console; atendente -> painel da fila (evita 403 em /admin)
+        location.href = proximo || (s.papel === 'admin'
+          ? '/admin'
+          : `/atendente?atendente_id=${s.usuario_id}`);
       } catch (e) {
         erro.textContent = 'Credenciais inválidas ou sem acesso ao painel.';
         erro.hidden = false;

@@ -12,6 +12,23 @@ from app.models import (
 TEXTO_ENCERRAMENTO_PADRAO = (
     "A equipe do Alô Saúde agradece seu contato e deseja uma ótima semana!"
 )
+
+# Função cujo titular opera a fila: ao logar, vai direto ao painel do atendente.
+FUNCAO_ATENDENTE_CHAT = "Atendente chat"
+
+
+def destino_pos_login(u: Usuario) -> str | None:
+    """Para onde redirecionar o profissional após o login (None = chat padrão)."""
+    if u.funcao is not None and u.funcao.nome == FUNCAO_ATENDENTE_CHAT:
+        return f"/atendente?atendente_id={u.id}"
+    return None
+
+
+def garantir_status_atendente(usuario_id: int, status: str = "disponivel") -> None:
+    """Cria a linha de disponibilidade se faltar (sem sobrescrever a existente)."""
+    if Session.get(AtendenteStatus, usuario_id) is None:
+        Session.add(AtendenteStatus(atendente_id=usuario_id, status=status))
+        Session.commit()
 from app.nlp.rules_engine import IntentDef
 
 

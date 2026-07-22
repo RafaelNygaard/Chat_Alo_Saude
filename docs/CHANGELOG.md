@@ -6,6 +6,28 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (14) — Função "Atendente chat" entra direto no painel
+
+- Nova função **"Atendente chat"** (migration `004` + seed do `schema.sql`).
+  Quem tem essa função é redirecionado ao **painel do atendente** ao fazer login
+  (ou logo após se cadastrar), em vez de ir para o chat.
+- Regra fica no backend: `repositories.destino_pos_login()` devolve
+  `redirecionar` em `/api/servidores/login` e `/api/servidores/identificar`; o
+  frontend só obedece. Também garante a linha em `atendentes_status`
+  (`garantir_status_atendente`), senão o profissional não receberia da fila.
+- **Correções encontradas na verificação:**
+  - O painel exibia `"Matrícula <id>"` (era o ID, não a matrícula). Agora mostra
+    **nome · matrícula** reais, via novo `GET /api/atendente/<id>/status`.
+  - O seletor de disponibilidade sempre abria em "ausente", **divergindo do
+    banco** — o atendente se achava fora e mesmo assim recebia da fila. Agora
+    carrega o status real.
+  - Login administrativo mandava papel `atendente` para `/admin` (403); agora
+    roteia por papel: admin → `/admin`, atendente → `/atendente`.
+- Testes: 4 novos (redirecionamento no login e no cadastro, disponibilidade
+  criada, outras funções sem redirect) — **61 no total**.
+
+---
+
 ## 2026-07-21 (13) — Divisor de handoff nomeia o atendente
 
 - `"Transferido para atendente humano"` → **`"Transferindo para o (a) atendente

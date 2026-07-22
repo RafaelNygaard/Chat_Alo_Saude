@@ -48,6 +48,19 @@ def minhas_conversas(atendente_id: int):
     ])
 
 
+@bp.get("/atendente/<int:atendente_id>/status")
+def obter_status(atendente_id: int):
+    """Status atual — o painel usa para não exibir disponibilidade errada."""
+    row = Session.get(AtendenteStatus, atendente_id)
+    usuario = Session.get(Usuario, atendente_id)
+    return jsonify({
+        "atendente_id": atendente_id,
+        "status": row.status if row else "ausente",
+        "nome": usuario.nome if usuario else None,
+        "matricula": usuario.matricula if usuario else None,
+    })
+
+
 @bp.post("/atendente/<int:atendente_id>/status")
 def definir_status(atendente_id: int):
     status = (request.get_json(force=True).get("status") or "").strip()

@@ -23,6 +23,20 @@ def listar_ubs():
 SENHA_MIN = 6
 
 
+def _servidor_json(u) -> dict:
+    """Dados do profissional + destino pós-login (painel do atendente ou chat)."""
+    destino = repo.destino_pos_login(u)
+    if destino:  # atendente de chat precisa constar na disponibilidade da fila
+        repo.garantir_status_atendente(u.id)
+    return {
+        "usuario_id": u.id, "nome": u.nome, "email": u.email,
+        "matricula": u.matricula, "funcao_id": u.funcao_id,
+        "funcao": u.funcao.nome if u.funcao else None,
+        "ubs_id": u.ubs_id, "ubs_nome": u.ubs.nome if u.ubs else "",
+        "redirecionar": destino,
+    }
+
+
 @bp.post("/servidores/login")
 def login_servidor():
     """Login do profissional já cadastrado (e-mail ou matrícula + senha)."""
@@ -35,11 +49,7 @@ def login_servidor():
     u, erro = repo.autenticar_servidor(identificador, senha)
     if erro:
         return jsonify({"erro": erro}), 401
-    return jsonify({
-        "usuario_id": u.id, "nome": u.nome, "email": u.email,
-        "matricula": u.matricula, "funcao_id": u.funcao_id,
-        "ubs_id": u.ubs_id, "ubs_nome": u.ubs.nome if u.ubs else "",
-    })
+    return jsonify(_servidor_json(u))
 
 
 @bp.post("/servidores/identificar")
@@ -66,4 +76,4 @@ def identificar():
                                         int(funcao_id), int(ubs_id), senha)
     if erro:
         return jsonify({"erro": erro}), 401
-    return jsonify({"usuario_id": u.id, "nome": u.nome, "ubs_id": u.ubs_id})
+    return jsonify(_servidor_json(u))

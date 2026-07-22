@@ -195,9 +195,12 @@ el('form-login-servidor').addEventListener('submit', async (ev) => {
     erro.hidden = false;
     return;
   }
-  salvarServidor(await r.json());  // resposta já vem sem senha
+  const s = await r.json();        // resposta já vem sem senha
+  salvarServidor(s);
   atualizarIdentidade();
   fecharLogin();
+  // Função "Atendente chat" vai direto ao painel do atendente
+  if (s.redirecionar) { location.href = s.redirecionar; return; }
   await carregarConversas();
 });
 
@@ -271,6 +274,8 @@ el('form-identificacao').addEventListener('submit', async (ev) => {
   const { senha, ...semSenha } = dados;  // a senha nunca é persistida no navegador
   salvarServidor({ usuario_id: s.usuario_id, ...semSenha, ubs_nome: ubsNome });
   atualizarIdentidade();
+  // Cadastrou-se como "Atendente chat": já entra no painel do atendente
+  if (s.redirecionar) { location.href = s.redirecionar; return; }
 
   try {
     fecharModal();

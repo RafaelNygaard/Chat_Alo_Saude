@@ -25,10 +25,11 @@ CREATE TABLE funcoes (
     ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- 'Atendente chat': ao logar, o profissional vai direto ao painel do atendente
 INSERT INTO funcoes (nome) VALUES
     ('Enfermeiro(a)'), ('Técnico(a) de Enfermagem'), ('Agente Comunitário de Saúde'),
     ('Médico(a)'), ('Coordenador(a) de Unidade'), ('Farmacêutico(a)'),
-    ('Cirurgião(ã)-Dentista'), ('Assistente Social');
+    ('Cirurgião(ã)-Dentista'), ('Assistente Social'), ('Atendente chat');
 
 -- ---------------------------------------------------------------
 -- 2. usuarios  (servidores, enfermeiros, atendentes, admins)
