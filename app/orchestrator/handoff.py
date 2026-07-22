@@ -11,6 +11,7 @@ class HandoffRepository(Protocol):
     def enfileirar(self, conversa_id: int, gatilho: str) -> None: ...
     def atribuir(self, conversa_id: int, atendente_id: int) -> None: ...
     def notificar_atendente(self, atendente_id: int, conversa_id: int) -> None: ...
+    def nome_atendente(self, atendente_id: int) -> str: ...
 
 
 @dataclass
@@ -33,10 +34,12 @@ class HandoffManager:
             atendente_id = disponiveis[0]
             self._repo.atribuir(conversa_id, atendente_id)
             self._repo.notificar_atendente(atendente_id, conversa_id)
+            # "disponível" como fallback caso o nome não esteja preenchido
+            nome = (self._repo.nome_atendente(atendente_id) or "").strip() or "disponível"
             return ResultadoHandoff(
                 atribuido=True,
                 atendente_id=atendente_id,
-                mensagem_sistema="Transferido para atendente humano",
+                mensagem_sistema=f"Transferindo para o (a) atendente {nome}.",
             )
         return ResultadoHandoff(
             atribuido=False,

@@ -169,6 +169,10 @@ class SqlHandoffRepository:
         )
         Session.commit()
 
+    def nome_atendente(self, atendente_id: int) -> str:
+        u = Session.get(Usuario, atendente_id)
+        return u.nome if u else ""
+
     def notificar_atendente(self, atendente_id: int, conversa_id: int) -> None:
         # MVP: o painel do atendente descobre via polling/SSE; hook para push futuro.
         pass

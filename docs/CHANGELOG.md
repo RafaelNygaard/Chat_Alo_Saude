@@ -6,6 +6,21 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-21 (13) — Divisor de handoff nomeia o atendente
+
+- `"Transferido para atendente humano"` → **`"Transferindo para o (a) atendente
+  <nome>."`**, com o nome do atendente que recebeu a conversa.
+- `HandoffRepository` ganhou `nome_atendente(atendente_id)`; implementado em
+  `SqlHandoffRepository` e no fake dos testes. Fallback para
+  *"...atendente disponível."* se o nome estiver vazio.
+- Não altera o divisor de `POST /conversas/<id>/assumir`
+  (*"Transferido para Agente X — hh:mm"*), que é o formato exigido pelo ADR-001
+  quando o atendente assume manualmente pelo painel.
+- Testes: `test_divisor_nomeia_o_atendente` e `test_divisor_sem_nome_usa_fallback`
+  — **57 no total**.
+
+---
+
 ## 2026-07-21 (12) — Aviso de espera no handoff
 
 - Ao escalar para humano, o bot passa a responder **primeiro**:

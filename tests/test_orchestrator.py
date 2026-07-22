@@ -19,14 +19,18 @@ class FakeNLP(NLPEngine):
 
 
 class FakeRepo:
-    def __init__(self, disponiveis=None):
+    def __init__(self, disponiveis=None, nomes=None):
         self.disponiveis = disponiveis or []
+        self.nomes = nomes or {}
         self.fila = []
         self.atribuicoes = []
         self.notificacoes = []
 
     def atendentes_disponiveis(self):
         return self.disponiveis
+
+    def nome_atendente(self, atendente_id):
+        return self.nomes.get(atendente_id, "")
 
     def enfileirar(self, conversa_id, gatilho):
         self.fila.append((conversa_id, gatilho))
@@ -38,8 +42,9 @@ class FakeRepo:
         self.notificacoes.append((atendente_id, conversa_id))
 
 
-def montar(entendimentos, disponiveis=None, topicos=("urgente", "emergencia")):
-    repo = FakeRepo(disponiveis)
+def montar(entendimentos, disponiveis=None, topicos=("urgente", "emergencia"),
+           nomes=None):
+    repo = FakeRepo(disponiveis, nomes)
     orq = Orquestrador(
         nlp=FakeNLP(entendimentos),
         handoff=HandoffManager(repo, prazo_sem_atendente_min=30),
@@ -129,12 +134,18 @@ class TestFilaSemAtendente:
         assert "30 minutos" in r.mensagens_extra[0].texto  # desfecho depois
         assert repo.atribuicoes == []
 
-    def test_divisor_de_sistema_com_atendente(self):
-        orq, _ = montar([Entendimento("falar_com_atendente", 0.9)], disponiveis=[5])
+    def test_divisor_nomeia_o_atendente(self):
+        orq, _ = montar([Entendimento("falar_com_atendente", 0.9)],
+                        disponiveis=[5], nomes={5: "Ana Paula"})
         r = orq.processar(EstadoConversa(1), "quero atendente")
         divisor = r.mensagens_extra[0]
         assert divisor.autor == "sistema"
-        assert "Transferido" in divisor.texto
+        assert divisor.texto == "Transferindo para o (a) atendente Ana Paula."
+
+    def test_divisor_sem_nome_usa_fallback(self):
+        orq, _ = montar([Entendimento("falar_com_atendente", 0.9)], disponiveis=[5])
+        r = orq.processar(EstadoConversa(1), "quero atendente")
+        assert r.mensagens_extra[0].texto == "Transferindo para o (a) atendente disponível."
 
 
 class TestConversaJaEscalada:
