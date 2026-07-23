@@ -6,6 +6,31 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-23 (18) — Responsividade + transferência em tempo real
+
+### Responsividade (ajusta a qualquer dispositivo)
+- Bloco responsivo em `estilo.css` com breakpoints em 860px (tablet) e 560px
+  (celular), cobrindo chat, painel do atendente (mesmas classes) e admin.
+- Layout `.principal`/`.admin-corpo` **empilha** em telas estreitas: a barra
+  lateral vira faixa superior rolável; o console admin ganha navegação
+  horizontal; tabelas largas **rolam** em vez de espremer/estourar a página.
+- `overflow-wrap` nas bolhas, `max-width:100%` em mídia, header/`barra-gov` com
+  quebra. Verificado a 375px: **zero scroll horizontal** em chat, login e admin.
+
+### Transferência do atendimento em tempo real
+- `atendente.js`: o painel passa a **pollar os atendimentos atribuídos** (a cada
+  4s, junto da fila) — antes só a fila era atualizada, então uma conversa
+  auto-atribuída pelo round-robin **não aparecia** sem recarregar.
+- Quando uma conversa nova é atribuída e o atendente está ocioso, ela **abre
+  sozinha** (mostra o handoff acontecendo). Ao encerrar, o painel volta a ocioso
+  e já recebe a próxima.
+- As mensagens em si já eram tempo real via SSE (corrigido no item 16).
+- Verificado com duas abas (chat + painel): pedido de atendente → atribuição ao
+  Atendente Demo → painel abre a conversa automaticamente → troca de mensagens
+  **bidirecional em ~1–2 s** nos dois sentidos.
+
+---
+
 ## 2026-07-22 (17) — Logo no cabeçalho + edição da identidade no admin
 
 - O quadrado amarelo com "+" foi substituído pelo **logo oficial do Alô Saúde**

@@ -73,6 +73,8 @@ async function carregarFila() {
   });
 }
 
+let idsMinhasConhecidos = null;   // null = ainda não carregou uma vez
+
 async function carregarMinhas() {
   const minhas = await api.get(`/api/atendente/${ATENDENTE_ID}/conversas`);
   const ul = el('lista-minhas');
@@ -96,6 +98,14 @@ async function carregarMinhas() {
     li.addEventListener('click', () => abrirConversa(c));
     ul.appendChild(li);
   });
+
+  // Transferência em tempo real: se uma conversa nova foi atribuída a este
+  // atendente e ele está ocioso, abre-a automaticamente (mostra o handoff).
+  if (idsMinhasConhecidos !== null && !conversaAtual) {
+    const nova = minhas.find((c) => !idsMinhasConhecidos.has(c.id));
+    if (nova) abrirConversa(nova);
+  }
+  idsMinhasConhecidos = new Set(minhas.map((c) => c.id));
 }
 
 // ---------------------------------------------------------------- conversa
@@ -166,6 +176,12 @@ el('campo-texto').addEventListener('keydown', (ev) => {
 el('btn-encerrar').addEventListener('click', async () => {
   if (!conversaAtual || !confirm('Encerrar este atendimento?')) return;
   await api.post(`/api/conversas/${conversaAtual.id}/encerrar`);
+  // Libera o painel: fica ocioso e pronto para receber o próximo em tempo real
+  stream?.close();
+  conversaAtual = null;
+  el('chat-cabecalho').hidden = true;
+  el('form-entrada').hidden = true;
+  mensagensEl.innerHTML = '';
   await Promise.all([carregarFila(), carregarMinhas()]);
 });
 
@@ -174,4 +190,5 @@ el('btn-encerrar').addEventListener('click', async () => {
 carregarIdentidade();
 carregarFila();
 carregarMinhas();
-setInterval(carregarFila, 5000);   // fila atualiza por polling leve
+// Polling leve: fila e atendimentos atribuídos (transferência em tempo real)
+setInterval(() => { carregarFila(); carregarMinhas(); }, 4000);
