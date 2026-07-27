@@ -6,6 +6,25 @@ arquivos afetados. Datas em `AAAA-MM-DD`.
 
 ---
 
+## 2026-07-23 (19) — Integração do fluxo de mensagens (atendente ↔ usuário)
+
+O fluxo já trafegava em tempo real via SSE; faltavam robustez e coerência no envio.
+- **Eco otimista** (`chat.js` e `atendente.js`): a mensagem enviada aparece **na
+  hora** (antes existia só o comentário "eco local", sem código — havia ~1 s de
+  atraso até o SSE devolver). Deduplicação por texto quando a versão persistida
+  chega, sem duplicar. Falha de envio marca a bolha (`.msg-falha`).
+- **"Digitando" honesto**: o indicador do bot só aparece quando o bot vai
+  responder (status "Aberto"); após o handoff, conversando com humano, não
+  aparece mais.
+- **Badge da lista lateral sincroniza** com o cabeçalho quando o status muda via
+  SSE (antes ficava "Aberto" mesmo já em atendimento humano).
+- Estilos `.msg-pendente`/`.msg-falha` em `estilo.css`.
+- Verificado com duas abas: eco instantâneo e sem duplicidade nos dois lados;
+  "digitando" presente no modo bot e ausente no modo humano; troca bidirecional
+  em ~1–2 s; lista lateral refletindo "Em atendimento".
+
+---
+
 ## 2026-07-23 (18) — Responsividade + transferência em tempo real
 
 ### Responsividade (ajusta a qualquer dispositivo)

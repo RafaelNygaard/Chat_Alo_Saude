@@ -284,6 +284,11 @@ table.grade input, table.grade select { padding: .35rem .5rem; border: 1px solid
 .msg-atendente { align-self: flex-start; background: var(--branco); border: 1px solid var(--cinza-borda); }
 
 /* Divisor de sistema (handoff) */
+/* Eco otimista: mensagem enviada aguardando confirmação do servidor via SSE */
+.msg-pendente { opacity: .6; }
+.msg-falha { border: 1px solid #b00; }
+.msg-falha::after { content: " · falha ao enviar"; font-size: .7rem; color: #b00; }
+
 .msg-sistema {
   align-self: center; max-width: 90%;
   font-size: .75rem; color: var(--cinza-texto);

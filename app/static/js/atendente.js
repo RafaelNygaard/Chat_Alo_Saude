@@ -128,7 +128,14 @@ async function abrirConversa(c) {
   rolarParaFim();
 
   stream = assinarStream(c.id, afterRef, {
-    onMensagem: (m) => { mensagensEl.appendChild(criarMsgAtendente(m)); rolarParaFim(); },
+    onMensagem: (m) => {
+      if (m.autor === 'atendente') {   // remove o eco otimista da própria resposta
+        [...mensagensEl.querySelectorAll('.msg-pendente')]
+          .find((x) => x.dataset.pendente === m.texto)?.remove();
+      }
+      mensagensEl.appendChild(criarMsgAtendente(m));
+      rolarParaFim();
+    },
     onStatus: (s) => atualizarBadge(s.status_ui),
   });
   carregarMinhas();
@@ -153,15 +160,28 @@ function rolarParaFim() { mensagensEl.scrollTop = mensagensEl.scrollHeight; }
 
 // ---------------------------------------------------------------- envio
 
+/** Eco otimista da resposta do atendente (aparece na hora; confirmada via SSE). */
+function ecoLocalAtendente(texto) {
+  const div = criarMsgAtendente({ autor: 'atendente', texto, criada_em: new Date().toISOString() });
+  div.classList.add('msg-pendente');
+  div.dataset.pendente = texto;
+  mensagensEl.appendChild(div);
+  rolarParaFim();
+  return div;
+}
+
 el('form-entrada').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const campo = el('campo-texto');
   const texto = campo.value.trim();
   if (!conversaAtual || !texto) return;
   campo.value = '';
+  const eco = ecoLocalAtendente(texto);
   try {
     await api.post(`/api/conversas/${conversaAtual.id}/responder`, { atendente_id: ATENDENTE_ID, texto });
   } catch (e) {
+    eco.classList.replace('msg-pendente', 'msg-falha');
+    eco.dataset.pendente = '';
     alert('Falha ao enviar. Tente novamente.');
   }
 });

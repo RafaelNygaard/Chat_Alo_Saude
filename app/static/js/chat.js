@@ -95,10 +95,26 @@ async function abrirConversa(c) {
   rolarParaFim();
 
   stream = assinarStream(c.id, afterRef, {
-    onMensagem: (m) => { removerTyping(); mensagensEl.appendChild(criarMsgEl(m)); rolarParaFim(); },
-    onStatus: (s) => atualizarBadge(s.status_ui),
+    onMensagem: (m) => {
+      removerTyping();
+      confirmarEco(m);   // remove o eco otimista, se a mensagem for a própria
+      mensagensEl.appendChild(criarMsgEl(m));
+      rolarParaFim();
+    },
+    onStatus: (s) => {
+      const mudou = el('chat-badge').textContent !== s.status_ui;
+      atualizarBadge(s.status_ui);
+      if (mudou) carregarConversas();   // sincroniza o badge do item na lista lateral
+    },
   });
   carregarConversas();
+}
+
+/** Remove o eco otimista correspondente quando a versão persistida chega via SSE. */
+function confirmarEco(m) {
+  if (m.autor !== 'usuario') return;
+  [...mensagensEl.querySelectorAll('.msg-pendente')]
+    .find((x) => x.dataset.pendente === m.texto)?.remove();
 }
 
 function atualizarBadge(statusUi) {
@@ -124,14 +140,31 @@ function mostrarTyping() {
 }
 function removerTyping() { document.getElementById('typing')?.remove(); }
 
+// "digitando" só faz sentido quando o bot vai responder (status "Aberto");
+// após o handoff, quem responde é o atendente humano.
+function modoBot() { return el('chat-badge').textContent === 'Aberto'; }
+
+/** Eco otimista: a mensagem aparece na hora, antes da confirmação do servidor. */
+function ecoLocal(texto) {
+  const div = criarMsgEl({ autor: 'usuario', texto, criada_em: new Date().toISOString() });
+  div.classList.add('msg-pendente');
+  div.dataset.pendente = texto;
+  mensagensEl.appendChild(div);
+  rolarParaFim();
+  return div;
+}
+
 async function enviar(texto) {
-  if (!conversaAtual || !texto.trim()) return;
-  // Eco local imediato; a mensagem persistida chega também via SSE (deduplicada por id)
-  mostrarTyping();
+  texto = (texto || '').trim();
+  if (!conversaAtual || !texto) return;
+  const eco = ecoLocal(texto);
+  if (modoBot()) mostrarTyping();
   try {
     await api.post(`/api/conversas/${conversaAtual.id}/mensagens`, { texto });
   } catch (e) {
     removerTyping();
+    eco.classList.replace('msg-pendente', 'msg-falha');
+    eco.dataset.pendente = '';   // não será deduplicada; fica marcada como falha
     alert('Falha ao enviar. Tente novamente.');
   }
 }
