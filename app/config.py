@@ -15,11 +15,8 @@ class Config:
         os.environ.get("HANDOFF_PRAZO_SEM_ATENDENTE_MIN", "30")
     )
 
-    # Recuperação de senha
-    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5000")
-    RECUPERACAO_TTL_MIN = int(os.environ.get("RECUPERACAO_TTL_MIN", "60"))
-
-    # SMTP (opcional). Sem SMTP_HOST, o link é registrado no log (modo dev).
+    # SMTP de fallback (opcional). O SMTP principal é configurado no admin.
+    # Sem SMTP algum, a senha temporária é registrada no log (modo dev).
     SMTP_HOST = os.environ.get("SMTP_HOST", "")
     SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
     SMTP_USER = os.environ.get("SMTP_USER", "")

@@ -355,6 +355,43 @@ def cabecalho_logo():
     return jsonify({"logo": cfg.logo_caminho})
 
 
+# ============================================== Servidor de e-mail (SMTP)
+@bp.get("/admin/email")
+@admin_required
+def email_obter():
+    return jsonify(repo.config_email_json(repo.obter_config_email()))
+
+
+@bp.put("/admin/email")
+@admin_required
+def email_salvar():
+    d = request.get_json(force=True)
+    if not (d.get("assunto") or "").strip() or not (d.get("corpo") or "").strip():
+        return jsonify({"erro": "assunto e corpo são obrigatórios"}), 400
+    cfg = repo.salvar_config_email(
+        host=d.get("host"), porta=d.get("porta"), email=d.get("email"),
+        assunto=d.get("assunto"), corpo=d.get("corpo"),
+        senha=d.get("senha"),   # só troca a senha se enviada
+    )
+    return jsonify(repo.config_email_json(cfg))
+
+
+@bp.post("/admin/email/testar")
+@admin_required
+def email_testar():
+    from app.emailer import testar_conexao
+    d = request.get_json(force=True)
+    host = (d.get("host") or "").strip()
+    if not host:
+        return jsonify({"ok": False, "mensagem": "informe o host do servidor"}), 400
+    # senha digitada agora tem prioridade; senão usa a que está guardada (cifrada)
+    smtp = repo.smtp_config(senha_em_claro=d.get("senha") or None) or {}
+    senha = d.get("senha") or smtp.get("senha", "")
+    ok, mensagem = testar_conexao(host, d.get("porta") or 587,
+                                  (d.get("email") or "").strip(), senha)
+    return jsonify({"ok": ok, "mensagem": mensagem})
+
+
 # ============================================== Mensagem de encerramento
 @bp.get("/admin/encerramento")
 @admin_required

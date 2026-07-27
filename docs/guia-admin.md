@@ -19,9 +19,18 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 
 Qualquer usuário com e-mail cadastrado pode recuperar a senha em
 `/recuperar-senha` (link **"Esqueci minha senha"** nas telas de login). O sistema
-envia um link com token válido por 60 minutos e de **uso único**. Sem SMTP
-configurado, o link é registrado no log do servidor (ver runbook). O admin também
-pode redefinir diretamente em **Servidores → Editar → Senha** ou via `manage.py`.
+gera uma **senha temporária**, envia por e-mail e **obriga a troca no primeiro
+acesso**. Sem SMTP configurado, a senha temporária é registrada no log do
+servidor (dev). O admin também pode redefinir em **Servidores → Editar → Senha**
+ou via `manage.py`.
+
+### Configurações → Servidor de e-mail (só admin)
+
+Configura o SMTP dos e-mails de recuperação: host, porta, e-mail de envio e senha
+(**guardada cifrada** no banco; a tela nunca exibe a senha de volta). O botão
+**"Testar Conexão"** valida host/porta/credenciais sem enviar mensagem. O
+**Modelo de recuperação** define assunto e corpo, com as variáveis `{{username}}`
+(nome) e `{{senha_temp}}` (senha gerada).
 
 ## Módulos
 

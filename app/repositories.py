@@ -1,16 +1,15 @@
 """Repositórios: ponte entre orquestrador/handoff e o PostgreSQL."""
-import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import func, or_, text
 from werkzeug.security import generate_password_hash
 
 from app.db import Session
 from app.models import (
-    AtendenteStatus, ConfigCabecalho, ConfigEncerramento, Conversa, FaqIntent,
-    Funcao, Handoff, Mensagem, PesquisaSatisfacao, TokenRecuperacao,
-    TopicoCritico, UBS, Usuario,
+    AtendenteStatus, ConfigCabecalho, ConfigEmail, ConfigEncerramento, Conversa,
+    FaqIntent, Funcao, Handoff, Mensagem, PesquisaSatisfacao, TopicoCritico,
+    UBS, Usuario,
 )
 
 TEXTO_ENCERRAMENTO_PADRAO = (
@@ -120,15 +119,8 @@ def listar_ubs() -> list[dict]:
 
 
 # ------------------------------------------------------- recuperação de senha
-def _hash_token(token: str) -> str:
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
-def _expirado(dt: datetime) -> bool:
-    """Compara tratando datetime sem tzinfo como UTC (SQLite dos testes)."""
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt < datetime.now(timezone.utc)
+# Alfabeto sem caracteres ambíguos (O/0, I/l/1) para a senha temporária.
+_ALFABETO_SENHA = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
 
 
 def usuario_por_identificador(identificador: str) -> Usuario | None:
@@ -139,38 +131,67 @@ def usuario_por_identificador(identificador: str) -> Usuario | None:
     )
 
 
-def criar_token_recuperacao(usuario_id: int, ttl_min: int = 60) -> str:
-    """Gera um token de uso único; guarda só o hash. Invalida os anteriores."""
-    Session.query(TokenRecuperacao).filter_by(usuario_id=usuario_id, usado_em=None).update(
-        {"usado_em": datetime.now(timezone.utc)}
-    )
-    token = secrets.token_urlsafe(32)
-    Session.add(TokenRecuperacao(
-        usuario_id=usuario_id,
-        token_hash=_hash_token(token),
-        expira_em=datetime.now(timezone.utc) + timedelta(minutes=ttl_min),
-    ))
+def gerar_senha_temporaria(usuario: Usuario, tamanho: int = 10) -> str:
+    """Define uma senha temporária aleatória e marca troca obrigatória no 1º acesso."""
+    temp = "".join(secrets.choice(_ALFABETO_SENHA) for _ in range(tamanho))
+    usuario.senha_hash = generate_password_hash(temp)
+    usuario.senha_temporaria = True
     Session.commit()
-    return token   # valor em claro só existe aqui e no link enviado
+    return temp   # valor em claro só existe aqui e no e-mail enviado
 
 
-def token_recuperacao_valido(token: str) -> TokenRecuperacao | None:
-    t = Session.query(TokenRecuperacao).filter_by(
-        token_hash=_hash_token(token), usado_em=None).first()
-    if t is None or _expirado(t.expira_em):
-        return None
-    return t
-
-
-def redefinir_senha_por_token(token: str, nova_senha: str) -> bool:
-    t = token_recuperacao_valido(token)
-    if t is None:
-        return False
-    usuario = Session.get(Usuario, t.usuario_id)
+def definir_senha(usuario: Usuario, nova_senha: str) -> None:
+    """Troca a senha e limpa a marca de temporária."""
     usuario.senha_hash = generate_password_hash(nova_senha)
-    t.usado_em = datetime.now(timezone.utc)   # consome (uso único)
+    usuario.senha_temporaria = False
     Session.commit()
-    return True
+
+
+# ---------------------------------------------------------- config de e-mail
+def obter_config_email() -> ConfigEmail:
+    cfg = Session.get(ConfigEmail, 1)
+    if cfg is None:
+        cfg = ConfigEmail(id=1)
+        Session.add(cfg)
+        Session.commit()
+    return cfg
+
+
+def config_email_json(cfg: ConfigEmail) -> dict:
+    """Sem a senha (só indica se há uma definida)."""
+    return {"host": cfg.smtp_host, "porta": cfg.smtp_port, "email": cfg.smtp_email,
+            "assunto": cfg.assunto, "corpo": cfg.corpo,
+            "tem_senha": bool(cfg.smtp_senha_cif)}
+
+
+def salvar_config_email(host, porta, email, assunto, corpo, senha=None) -> ConfigEmail:
+    from app.seguranca import cifrar
+    cfg = obter_config_email()
+    cfg.smtp_host = (host or "").strip()
+    cfg.smtp_port = int(porta or 587)
+    cfg.smtp_email = (email or "").strip()
+    cfg.assunto = (assunto or "").strip()
+    cfg.corpo = corpo or ""
+    if senha:                          # só atualiza a senha se enviada
+        cfg.smtp_senha_cif = cifrar(senha)
+    cfg.atualizado_em = datetime.now(timezone.utc)
+    Session.commit()
+    return cfg
+
+
+def smtp_config(senha_em_claro: str | None = None) -> dict | None:
+    """Dados do SMTP com a senha decifrada, ou None se não há host configurado.
+
+    `senha_em_claro` (opcional) sobrepõe a senha guardada — usado no "Testar
+    Conexão" quando o admin digita uma senha nova ainda não salva.
+    """
+    from app.seguranca import decifrar
+    cfg = obter_config_email()
+    if not cfg.smtp_host:
+        return None
+    senha = senha_em_claro if senha_em_claro else decifrar(cfg.smtp_senha_cif)
+    return {"host": cfg.smtp_host, "port": cfg.smtp_port,
+            "email": cfg.smtp_email, "senha": senha}
 
 
 def autenticar_servidor(identificador: str, senha: str) -> tuple[Usuario | None, str | None]:

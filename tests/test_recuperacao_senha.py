@@ -1,9 +1,7 @@
-"""Recuperação de senha: token com hash, prazo e uso único (ADR-003).
+"""Recuperação por senha temporária + troca no 1º acesso + config de e-mail.
 
 SQLite in-memory (StaticPool) — sem PostgreSQL nem SMTP; o e-mail cai no log.
 """
-from datetime import datetime, timedelta, timezone
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
@@ -13,12 +11,12 @@ from app import create_app
 from app import repositories as repo
 from app.config import Config
 from app.db import Session
-from app.models import Base, TokenRecuperacao, Usuario
+from app.models import Base, ConfigEmail, Usuario
 
 
 class ConfigTeste(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
-    SECRET_KEY = "teste"
+    SECRET_KEY = "chave-teste"
 
 
 @pytest.fixture()
@@ -31,6 +29,8 @@ def app():
     Session.add(Usuario(id=1, nome="Carla", email="carla@ex.com", matricula="M1",
                         papel="servidor", senha_hash=generate_password_hash("antiga1")))
     Session.add(Usuario(id=2, nome="Sem Email", matricula="M2", papel="servidor"))
+    Session.add(Usuario(id=3, nome="Admin", email="adm@ex.com", papel="admin",
+                        senha_hash=generate_password_hash("admin123")))
     Session.commit()
     yield app
     Session.remove()
@@ -42,70 +42,108 @@ def client(app):
     return app.test_client()
 
 
-# ---------------------------------------------------------- repositório
-def test_token_guardado_como_hash(app):
-    token = repo.criar_token_recuperacao(1, ttl_min=60)
-    row = Session.query(TokenRecuperacao).filter_by(usuario_id=1).one()
-    assert row.token_hash != token                 # nunca guarda o token em claro
-    assert row.token_hash == repo._hash_token(token)
-    assert repo.token_recuperacao_valido(token).usuario_id == 1
+def _login_admin(client):
+    client.post("/api/login", json={"identificador": "adm@ex.com", "senha": "admin123"})
 
 
-def test_novo_token_invalida_o_anterior(app):
-    t1 = repo.criar_token_recuperacao(1)
-    t2 = repo.criar_token_recuperacao(1)
-    assert repo.token_recuperacao_valido(t1) is None   # o anterior deixa de valer
-    assert repo.token_recuperacao_valido(t2) is not None
+# ------------------------------------------------------------ recuperação
+def test_recuperar_gera_senha_temporaria(client):
+    hash_antes = Session.get(Usuario, 1).senha_hash
+    r = client.post("/api/recuperar-senha", json={"identificador": "M1"})
+    assert r.status_code == 200
+    u = Session.get(Usuario, 1)
+    assert u.senha_temporaria is True
+    assert u.senha_hash != hash_antes                 # senha trocada
+    assert not check_password_hash(u.senha_hash, "antiga1")
 
 
-def test_token_expirado_invalido(app):
-    token = repo.criar_token_recuperacao(1)
-    row = Session.query(TokenRecuperacao).filter_by(usuario_id=1, usado_em=None).one()
-    row.expira_em = datetime.now(timezone.utc) - timedelta(minutes=1)
-    Session.commit()
-    assert repo.token_recuperacao_valido(token) is None
-
-
-def test_redefinir_troca_a_senha_e_consome_token(app):
-    token = repo.criar_token_recuperacao(1)
-    assert repo.redefinir_senha_por_token(token, "novaSenha9") is True
-    assert check_password_hash(Session.get(Usuario, 1).senha_hash, "novaSenha9")
-    assert repo.token_recuperacao_valido(token) is None          # uso único
-    assert repo.redefinir_senha_por_token(token, "outra12") is False
-
-
-# ------------------------------------------------------------- endpoints
 def test_recuperar_resposta_generica_sem_enumeracao(client):
     r1 = client.post("/api/recuperar-senha", json={"identificador": "M1"})
     r2 = client.post("/api/recuperar-senha", json={"identificador": "NAO-EXISTE"})
-    assert r1.status_code == r2.status_code == 200
-    assert r1.get_json()["mensagem"] == r2.get_json()["mensagem"]   # idêntica
-    assert Session.query(TokenRecuperacao).count() == 1            # só p/ quem existe
+    assert r1.get_json()["mensagem"] == r2.get_json()["mensagem"]
 
 
-def test_recuperar_sem_email_nao_gera_token(client):
-    client.post("/api/recuperar-senha", json={"identificador": "M2"})  # usuário sem e-mail
-    assert Session.query(TokenRecuperacao).filter_by(usuario_id=2).count() == 0
+def test_recuperar_sem_email_nao_gera_temporaria(client):
+    client.post("/api/recuperar-senha", json={"identificador": "M2"})
+    assert Session.get(Usuario, 2).senha_temporaria is False
 
 
-def test_validar_token_endpoint(client):
-    token = repo.criar_token_recuperacao(1)
-    assert client.get(f"/api/recuperar-senha/validar?token={token}").get_json()["valido"]
-    assert not client.get("/api/recuperar-senha/validar?token=lixo").get_json()["valido"]
+# ------------------------------------------------- login + troca obrigatória
+def test_login_com_senha_temporaria_exige_troca(client):
+    temp = repo.gerar_senha_temporaria(Session.get(Usuario, 3))
+    r = client.post("/api/login", json={"identificador": "adm@ex.com", "senha": temp})
+    assert r.status_code == 200 and r.get_json()["senha_temporaria"] is True
+    assert r.get_json().get("papel") is None          # não abre sessão ainda
+    assert client.get("/api/sessao").status_code == 401
 
 
-def test_redefinir_endpoint_sucesso(client):
-    token = repo.criar_token_recuperacao(1)
-    r = client.post("/api/redefinir-senha", json={"token": token, "senha": "novaSenha9"})
+def test_servidor_login_reporta_senha_temporaria(client):
+    temp = repo.gerar_senha_temporaria(Session.get(Usuario, 1))
+    r = client.post("/api/servidores/login", json={"identificador": "M1", "senha": temp})
+    assert r.status_code == 200 and r.get_json()["senha_temporaria"] is True
+
+
+def test_trocar_senha_limpa_flag_e_autentica(client):
+    temp = repo.gerar_senha_temporaria(Session.get(Usuario, 1))
+    r = client.post("/api/trocar-senha", json={
+        "identificador": "M1", "senha_atual": temp, "nova_senha": "minhaNova9"})
     assert r.status_code == 200
-    assert check_password_hash(Session.get(Usuario, 1).senha_hash, "novaSenha9")
+    u = Session.get(Usuario, 1)
+    assert u.senha_temporaria is False
+    assert check_password_hash(u.senha_hash, "minhaNova9")
 
 
-def test_redefinir_senha_curta(client):
-    token = repo.criar_token_recuperacao(1)
-    assert client.post("/api/redefinir-senha", json={"token": token, "senha": "123"}).status_code == 400
+def test_trocar_senha_atual_incorreta(client):
+    assert client.post("/api/trocar-senha", json={
+        "identificador": "M1", "senha_atual": "errada", "nova_senha": "minhaNova9"}).status_code == 401
 
 
-def test_redefinir_token_invalido(client):
-    assert client.post("/api/redefinir-senha",
-                       json={"token": "invalido", "senha": "novaSenha9"}).status_code == 400
+def test_trocar_senha_nova_curta(client):
+    assert client.post("/api/trocar-senha", json={
+        "identificador": "M1", "senha_atual": "antiga1", "nova_senha": "123"}).status_code == 400
+
+
+def test_trocar_senha_igual_atual(client):
+    assert client.post("/api/trocar-senha", json={
+        "identificador": "M1", "senha_atual": "antiga1", "nova_senha": "antiga1"}).status_code == 400
+
+
+# ------------------------------------------------------- config de e-mail
+def test_config_email_exige_admin(client):
+    assert client.get("/api/admin/email").status_code == 401
+    assert client.put("/api/admin/email", json={"assunto": "x", "corpo": "y"}).status_code == 401
+
+
+def test_salvar_config_cifra_senha_e_nao_devolve(client):
+    _login_admin(client)
+    r = client.put("/api/admin/email", json={
+        "host": "mail.ex.gov.br", "porta": 587, "email": "no-reply@ex.gov.br",
+        "senha": "segredoSMTP", "assunto": "Recuperação", "corpo": "Olá {{username}}"})
+    assert r.status_code == 200
+    assert "senha" not in r.get_json() and r.get_json()["tem_senha"] is True
+    # guardada cifrada, mas decifrável para uso
+    cfg = Session.get(ConfigEmail, 1)
+    assert cfg.smtp_senha_cif and cfg.smtp_senha_cif != "segredoSMTP"
+    with client.application.app_context():   # decifrar precisa do current_app
+        assert repo.smtp_config()["senha"] == "segredoSMTP"
+
+
+def test_config_email_assunto_corpo_obrigatorios(client):
+    _login_admin(client)
+    assert client.put("/api/admin/email", json={"assunto": "", "corpo": ""}).status_code == 400
+
+
+def test_testar_conexao_exige_host(client):
+    _login_admin(client)
+    r = client.post("/api/admin/email/testar", json={"host": ""})
+    assert r.status_code == 400 and r.get_json()["ok"] is False
+
+
+# ------------------------------------------------------------- criptografia
+def test_cifrar_decifrar_roundtrip(app):
+    with app.app_context():
+        from app.seguranca import cifrar, decifrar
+        cif = cifrar("segredo-123")
+        assert cif != "segredo-123"
+        assert decifrar(cif) == "segredo-123"
+        assert decifrar("lixo-invalido") == ""    # não estoura, retorna vazio

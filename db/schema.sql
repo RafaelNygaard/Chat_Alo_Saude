@@ -46,6 +46,7 @@ CREATE TABLE usuarios (
     funcao_id   INTEGER REFERENCES funcoes(id),
     papel       TEXT NOT NULL CHECK (papel IN ('servidor', 'enfermeiro', 'atendente', 'admin')),
     senha_hash  TEXT,
+    senha_temporaria BOOLEAN NOT NULL DEFAULT FALSE,  -- obriga troca no próximo login
     criado_em   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -197,18 +198,24 @@ INSERT INTO config_cabecalho (id, logo_caminho) VALUES
     (1, '/static/img/logo-alo-saude.png');
 
 -- ---------------------------------------------------------------
--- 14. tokens_recuperacao  (recuperação de senha; token guardado como hash)
+-- 14. config_email  (linha única; SMTP + modelo de recuperação de senha)
+-- A senha do SMTP é guardada CIFRADA (Fernet, chave derivada de SECRET_KEY).
 -- ---------------------------------------------------------------
-CREATE TABLE tokens_recuperacao (
-    id          SERIAL PRIMARY KEY,
-    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id),
-    token_hash  TEXT NOT NULL UNIQUE,     -- sha256 do token; nunca o token em claro
-    expira_em   TIMESTAMPTZ NOT NULL,
-    usado_em    TIMESTAMPTZ,
-    criado_em   TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE config_email (
+    id             SERIAL PRIMARY KEY,
+    smtp_host      TEXT NOT NULL DEFAULT '',
+    smtp_port      INTEGER NOT NULL DEFAULT 587,
+    smtp_email     TEXT NOT NULL DEFAULT '',
+    smtp_senha_cif TEXT,
+    assunto        TEXT NOT NULL DEFAULT 'Recuperação de senha — Alô Saúde',
+    corpo          TEXT NOT NULL DEFAULT
+        E'Olá {{username}}!\n\nRecebemos um pedido para redefinir sua senha. '
+        'Segue sua senha temporária: {{senha_temp}}\n\n'
+        'Ela deve ser trocada no primeiro acesso.\n\nEquipe Alô Saúde.',
+    atualizado_em  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_tokens_recuperacao_usuario ON tokens_recuperacao (usuario_id);
+INSERT INTO config_email (id) VALUES (1);
 
 -- ---------------------------------------------------------------
 -- Palavras-chave de tópicos críticos (Decisão B: em tabela, não em código)

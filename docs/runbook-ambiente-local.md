@@ -46,6 +46,7 @@ $env:PGPASSWORD='senha'
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\005_fila_round_robin.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\006_config_cabecalho.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\007_recuperacao_senha.sql
+& $psql -U alosaude -h localhost -d alosaude -f db\migrations\008_config_email_senha_temporaria.sql
 ```
 
 > Nota: `schema.sql` já inclui a tabela `funcoes` e as colunas novas de
@@ -79,12 +80,13 @@ copy .env.example .env   # ajustar se necessário
 | `RECUPERACAO_TTL_MIN` | `60` | Validade do token de recuperação (minutos) |
 | `SMTP_HOST` … | vazio | E-mail de recuperação. **Vazio = link vai para o log** (dev) |
 
-### Recuperação de senha
+### Recuperação de senha / SMTP
 
-Sem `SMTP_HOST` configurado, o link de recuperação **não é enviado por e-mail** —
-ele é escrito no **log do servidor** (`WARNING in emailer`), o que permite testar
-o fluxo em desenvolvimento. Em produção, preencher `SMTP_HOST`/`SMTP_PORT`/
-`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` e ajustar `APP_BASE_URL` para a URL real.
+O SMTP é configurado na **área administrativa** (Configurações → Servidor de
+e-mail); a senha fica **cifrada** no banco. As variáveis `SMTP_*` do `.env` são
+apenas um **fallback** quando o SMTP não foi definido no admin. Sem nenhum SMTP,
+a **senha temporária** de recuperação é escrita no **log do servidor**
+(`WARNING in emailer`), o que permite testar o fluxo em desenvolvimento.
 
 ## 3. Criar um administrador (área admin — ADR-003)
 

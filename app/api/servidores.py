@@ -34,6 +34,7 @@ def _servidor_json(u) -> dict:
         "funcao": u.funcao.nome if u.funcao else None,
         "ubs_id": u.ubs_id, "ubs_nome": u.ubs.nome if u.ubs else "",
         "redirecionar": destino,
+        "senha_temporaria": bool(u.senha_temporaria),
     }
 
 

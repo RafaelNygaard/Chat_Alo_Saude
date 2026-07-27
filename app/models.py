@@ -35,6 +35,7 @@ class Usuario(Base):
     funcao_id = Column(Integer, ForeignKey("funcoes.id"))
     papel = Column(Text, nullable=False)  # servidor | enfermeiro | atendente | admin
     senha_hash = Column(Text)  # apenas para papéis com login (admin/atendente)
+    senha_temporaria = Column(Boolean, nullable=False, default=False)  # troca no 1º acesso
     criado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
     ubs = relationship("UBS")
@@ -151,15 +152,20 @@ class ConfigCabecalho(Base):
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
-class TokenRecuperacao(Base):
-    """Token de recuperação de senha. Guardado como hash; uso único e com prazo."""
-    __tablename__ = "tokens_recuperacao"
+class ConfigEmail(Base):
+    """Linha única (id=1): SMTP + modelo do e-mail de recuperação.
+
+    A senha do SMTP é guardada CIFRADA (ver app/seguranca.py), nunca em claro.
+    """
+    __tablename__ = "config_email"
     id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    token_hash = Column(Text, nullable=False, unique=True)
-    expira_em = Column(DateTime(timezone=True), nullable=False)
-    usado_em = Column(DateTime(timezone=True))
-    criado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+    smtp_host = Column(Text, nullable=False, default="")
+    smtp_port = Column(Integer, nullable=False, default=587)
+    smtp_email = Column(Text, nullable=False, default="")
+    smtp_senha_cif = Column(Text)   # cifrada
+    assunto = Column(Text, nullable=False, default="Recuperação de senha — Alô Saúde")
+    corpo = Column(Text, nullable=False, default="")
+    atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 class TopicoCritico(Base):

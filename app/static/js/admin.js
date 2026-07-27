@@ -27,6 +27,7 @@ const SECOES = {
   topicos: renderTopicos,
   encerramento: renderEncerramento,
   atendentes: renderAtendentes,
+  email: renderEmail,
 };
 
 document.querySelectorAll('.admin-nav button').forEach((b) => {
@@ -474,6 +475,68 @@ async function renderAtendentes() {
     alvo.innerHTML = ''; alvo.append(t);
   }
   carregar();
+}
+
+// ------------------------------------------------- Servidor de e-mail (SMTP)
+async function renderEmail() {
+  main.innerHTML = '';
+  main.append(h('h2', { class: 'titulo' }, 'Servidor de e-mail'));
+  const cfg = await api.get('/api/admin/email');
+
+  const host = h('input', { type: 'text', value: cfg.host || '', style: 'width:100%', placeholder: 'mail.exemplo.gov.br' });
+  const porta = h('input', { type: 'number', value: cfg.porta || 587, style: 'width:100%' });
+  const email = h('input', { type: 'email', value: cfg.email || '', style: 'width:100%', placeholder: 'no-reply@exemplo.gov.br' });
+  const senha = h('input', { type: 'password', style: 'width:100%', placeholder: cfg.tem_senha ? '•••••••• (definida)' : 'senha / app password', autocomplete: 'new-password' });
+  const status = h('span', { style: 'font-size:.82rem;margin-left:.6rem' });
+
+  const bloco = (titulo, ...campos) => h('div', { style: 'background:#fff;border:1px solid var(--cinza-borda);border-radius:8px;padding:1rem;max-width:680px;margin-bottom:1rem' },
+    h('h3', { class: 'titulo', style: 'margin-bottom:.6rem;font-size:1rem' }, titulo), ...campos);
+
+  main.append(bloco('Servidor SMTP',
+    h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap' },
+      h('div', { style: 'flex:2;min-width:220px' }, linha('Host do servidor', host)),
+      h('div', { style: 'flex:1;min-width:110px' }, linha('Porta', porta))),
+    h('div', { style: 'display:flex;gap:1rem;flex-wrap:wrap' },
+      h('div', { style: 'flex:1;min-width:220px' }, linha('E-mail de envio', email)),
+      h('div', { style: 'flex:1;min-width:220px' }, linha('Senha / App Password', senha))),
+    h('div', { style: 'display:flex;align-items:center' },
+      h('button', {
+        class: 'btn mini', onclick: async () => {
+          status.textContent = 'Testando...'; status.style.color = 'var(--cinza-texto)';
+          try {
+            const r = await api.post('/api/admin/email/testar', {
+              host: host.value.trim(), porta: Number(porta.value) || 587,
+              email: email.value.trim(), senha: senha.value,
+            });
+            status.textContent = r.mensagem;
+            status.style.color = r.ok ? 'var(--verde)' : '#b00';
+          } catch (e) { status.textContent = 'Erro ao testar.'; status.style.color = '#b00'; }
+        }
+      }, 'Testar Conexão'), status)));
+
+  const assunto = h('input', { type: 'text', value: cfg.assunto || '', style: 'width:100%' });
+  const corpo = h('textarea', { style: 'width:100%;min-height:150px' });
+  corpo.value = cfg.corpo || '';
+  main.append(bloco('Modelo de recuperação',
+    linha('Assunto do e-mail', assunto),
+    linha('Corpo da mensagem', corpo),
+    h('p', { style: 'font-size:.8rem;color:var(--cinza-texto)' },
+      'Use ', h('code', {}, '{{senha_temp}}'), ' para a senha gerada e ',
+      h('code', {}, '{{username}}'), ' para o nome do usuário.')));
+
+  main.append(h('button', {
+    class: 'btn', onclick: async () => {
+      try {
+        await api.put('/api/admin/email', {
+          host: host.value.trim(), porta: Number(porta.value) || 587,
+          email: email.value.trim(), senha: senha.value || undefined,
+          assunto: assunto.value, corpo: corpo.value,
+        });
+        senha.value = '';
+        aviso('Configurações salvas.');
+      } catch (e) { aviso('Falha ao salvar (assunto e corpo são obrigatórios).'); }
+    }
+  }, 'Salvar Configurações'));
 }
 
 // -------------------------------------------------------------- init

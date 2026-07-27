@@ -2,6 +2,7 @@ Flask==2.3.3
 Werkzeug==3.1.8          # fixado: versão puxada pelo Flask 2.3.3 e validada em runtime
 SQLAlchemy==2.0.32
 psycopg2-binary==2.9.12  # 2.9.9 não tem wheel para Python 3.14; 2.9.12 tem
+cryptography==49.0.0      # cifra a senha do SMTP guardada no banco (Fernet)
 requests==2.32.3
 python-dotenv==1.0.1
 pytest==8.3.2

@@ -1,4 +1,10 @@
-"""Endpoints de autenticação e recuperação de senha (ADR-003)."""
+"""Endpoints de autenticação e recuperação de senha (ADR-003).
+
+Recuperação por SENHA TEMPORÁRIA: o sistema gera uma senha, marca troca
+obrigatória no 1º acesso e a envia por e-mail (modelo configurável no admin).
+"""
+import re
+
 from flask import Blueprint, current_app, jsonify, request, session
 from sqlalchemy import or_
 from werkzeug.security import check_password_hash
@@ -11,6 +17,12 @@ from app.models import Usuario
 bp = Blueprint("auth_api", __name__)
 
 SENHA_MIN = 6
+
+
+def _render(template: str, **vars) -> str:
+    """Substitui {{chave}} (com ou sem espaços) pelas variáveis dadas."""
+    return re.sub(r"\{\{\s*(\w+)\s*\}\}",
+                  lambda m: str(vars.get(m.group(1), m.group(0))), template)
 
 
 @bp.post("/login")
@@ -31,11 +43,16 @@ def login():
     if u.papel not in ("admin", "atendente"):
         return jsonify({"erro": "usuário sem acesso ao painel"}), 403
 
+    # Senha temporária: não abre sessão; o cliente força a troca antes de entrar.
+    if u.senha_temporaria:
+        return jsonify({"senha_temporaria": True, "usuario_id": u.id, "nome": u.nome})
+
     session.clear()
     session["usuario_id"] = u.id
     session["papel"] = u.papel
     session["nome"] = u.nome
-    return jsonify({"usuario_id": u.id, "nome": u.nome, "papel": u.papel})
+    return jsonify({"usuario_id": u.id, "nome": u.nome, "papel": u.papel,
+                    "senha_temporaria": False})
 
 
 @bp.post("/logout")
@@ -55,42 +72,36 @@ def sessao():
 # ----------------------------------------------------- recuperação de senha
 @bp.post("/recuperar-senha")
 def recuperar_senha():
-    """Solicita o link de recuperação. Resposta genérica (não revela cadastro)."""
+    """Gera senha temporária e envia por e-mail. Resposta genérica (sem enumeração)."""
     identificador = (request.get_json(force=True).get("identificador") or "").strip()
     if not identificador:
         return jsonify({"erro": "informe e-mail ou matrícula"}), 400
 
     usuario = repo.usuario_por_identificador(identificador)
     if usuario and usuario.email:
-        ttl = current_app.config["RECUPERACAO_TTL_MIN"]
-        token = repo.criar_token_recuperacao(usuario.id, ttl)
-        base = current_app.config["APP_BASE_URL"].rstrip("/")
-        link = f"{base}/recuperar-senha?token={token}"
-        enviar_email(
-            usuario.email, "Recuperação de senha — Alô Saúde",
-            f"Olá, {usuario.nome}.\n\n"
-            "Recebemos um pedido para redefinir sua senha no Alô Saúde. "
-            f"Acesse o link abaixo (válido por {ttl} minutos):\n\n{link}\n\n"
-            "Se você não fez essa solicitação, ignore este e-mail.",
-        )
-    # Mesma resposta exista ou não o usuário — evita enumeração de contas.
+        temp = repo.gerar_senha_temporaria(usuario)
+        cfg = repo.obter_config_email()
+        corpo = _render(cfg.corpo, username=usuario.nome, senha_temp=temp)
+        enviar_email(usuario.email, cfg.assunto, corpo)
     return jsonify({"mensagem": "Se o identificador estiver cadastrado com e-mail, "
-                                "enviamos as instruções de recuperação."})
+                                "enviamos uma senha temporária."})
 
 
-@bp.get("/recuperar-senha/validar")
-def validar_token_recuperacao():
-    token = (request.args.get("token") or "").strip()
-    return jsonify({"valido": bool(token and repo.token_recuperacao_valido(token))})
+@bp.post("/trocar-senha")
+def trocar_senha():
+    """Troca a senha reautenticando com a senha atual (temporária ou não)."""
+    d = request.get_json(force=True)
+    identificador = (d.get("identificador") or "").strip()
+    senha_atual = d.get("senha_atual") or ""
+    nova = d.get("nova_senha") or ""
+    if len(nova) < SENHA_MIN:
+        return jsonify({"erro": f"a nova senha deve ter ao menos {SENHA_MIN} caracteres"}), 400
 
+    u = repo.usuario_por_identificador(identificador)
+    if u is None or not u.senha_hash or not check_password_hash(u.senha_hash, senha_atual):
+        return jsonify({"erro": "credenciais inválidas"}), 401
+    if check_password_hash(u.senha_hash, nova):
+        return jsonify({"erro": "a nova senha deve ser diferente da atual"}), 400
 
-@bp.post("/redefinir-senha")
-def redefinir_senha():
-    dados = request.get_json(force=True)
-    token = (dados.get("token") or "").strip()
-    senha = dados.get("senha") or ""
-    if len(senha) < SENHA_MIN:
-        return jsonify({"erro": f"a senha deve ter ao menos {SENHA_MIN} caracteres"}), 400
-    if not repo.redefinir_senha_por_token(token, senha):
-        return jsonify({"erro": "link inválido ou expirado — solicite um novo"}), 400
-    return jsonify({"mensagem": "Senha redefinida com sucesso."})
+    repo.definir_senha(u, nova)
+    return jsonify({"ok": True})

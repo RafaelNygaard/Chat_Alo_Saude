@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-07-27 (21) — Configuração de servidor de e-mail + recuperação por senha temporária
+
+Substitui o fluxo de token de recuperação (entrada 20) pelo modelo do mockup
+solicitado: **senha temporária** enviada por e-mail, com **troca obrigatória no
+1º acesso**, e **configuração de SMTP na área administrativa**.
+
+- **Schema** (migration `008` + `schema.sql` + `models.py`): tabela `config_email`
+  (SMTP + assunto/corpo do e-mail); `usuarios.senha_temporaria` (flag de troca no
+  1º acesso). Tabela `tokens_recuperacao` **removida** (fluxo de token
+  descontinuado).
+- **Segurança**: a **senha do SMTP é cifrada** no banco (Fernet, chave derivada
+  de `SECRET_KEY` — `app/seguranca.py`); a API nunca devolve a senha (só indica
+  se há uma definida). Nova dependência: `cryptography`.
+- **Recuperação**: `POST /api/recuperar-senha` gera uma senha temporária, marca
+  troca obrigatória e envia por e-mail (modelo configurável, com `{{username}}` e
+  `{{senha_temp}}`). Resposta genérica (sem enumeração). No login, senha
+  temporária **não abre sessão** — o cliente força a troca via
+  `POST /api/trocar-senha` antes de entrar.
+- **Admin → Configurações → "Servidor de e-mail"** (só papel admin): host, porta,
+  e-mail, senha, **"Testar Conexão"**, e o modelo (assunto/corpo). Endpoints
+  `GET/PUT /api/admin/email` e `POST /api/admin/email/testar`.
+- **Frontend**: telas de troca obrigatória nos dois logins (admin e servidor);
+  página `/recuperar-senha` simplificada (só o pedido). `emailer.py` usa o SMTP
+  do banco, com fallback para `.env` e, na ausência, log (dev).
+- Testes: `tests/test_recuperacao_senha.py` reescrito (16 casos: senha
+  temporária, troca no 1º acesso, config cifrada, testar conexão, criptografia) —
+  **96 no total**.
+- Verificado no navegador: tela de config (senha cifrada no banco, não devolvida),
+  e-mail com a senha temporária (modelo `{{username}}`/`{{senha_temp}}`), login
+  com temp → troca obrigatória → entrada; temp antiga invalidada (401).
+
+
 ## 2026-07-27 (20) — Recuperação de senha
 
 - **Fluxo self-service** de redefinição por token, para qualquer usuário com
