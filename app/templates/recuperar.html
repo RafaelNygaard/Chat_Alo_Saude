@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de senha — {{ cabecalho.titulo }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <div class="barra-gov">
+    <span><strong>{{ cabecalho.orgao }}</strong> &nbsp;|&nbsp; Sistema {{ cabecalho.titulo }}</span>
+  </div>
+
+  <div class="login-tela">
+    <div class="login-card">
+      <div class="marca">
+        {% if cabecalho.logo %}
+          <img class="logo-icone" src="{{ cabecalho.logo }}" alt="{{ cabecalho.titulo }}">
+        {% else %}
+          <div class="logo-icone sem-imagem" aria-hidden="true">+</div>
+        {% endif %}
+        <div>
+          <div class="titulo"><strong>{{ cabecalho.titulo }}</strong></div>
+          <div class="subtitulo">Recuperação de senha</div>
+        </div>
+      </div>
+
+      <!-- Passo 1: solicitar o link -->
+      <form id="form-solicitar">
+        <p class="modal-sub" style="margin:0">Informe seu e-mail ou matrícula. Enviaremos um link para redefinir a senha.</p>
+        <label>E-mail ou matrícula
+          <input id="rec-id" type="text" required autocomplete="username">
+        </label>
+        <button class="btn" type="submit">Enviar link de recuperação</button>
+      </form>
+
+      <!-- Passo 2: redefinir (quando há token na URL) -->
+      <form id="form-redefinir" hidden>
+        <p class="modal-sub" style="margin:0">Escolha uma nova senha (mínimo 6 caracteres).</p>
+        <label>Nova senha
+          <input id="rec-senha" type="password" required minlength="6" autocomplete="new-password">
+        </label>
+        <label>Confirmar nova senha
+          <input id="rec-senha2" type="password" required minlength="6" autocomplete="new-password">
+        </label>
+        <button class="btn" type="submit">Redefinir senha</button>
+      </form>
+
+      <p class="modal-erro" id="rec-erro" role="alert" hidden></p>
+      <p id="rec-ok" style="background:var(--verde-claro);color:var(--verde);border-radius:6px;padding:.6rem .7rem;font-size:.85rem;font-weight:600" hidden></p>
+
+      <a class="login-voltar" href="/login">← Voltar ao acesso</a>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
+  <script>
+    'use strict';
+    const token = new URLSearchParams(location.search).get('token');
+    const erro = document.getElementById('rec-erro');
+    const ok = document.getElementById('rec-ok');
+    const mostrarErro = (m) => { erro.textContent = m; erro.hidden = false; ok.hidden = true; };
+    const mostrarOk = (m) => { ok.textContent = m; ok.hidden = false; erro.hidden = true; };
+
+    if (token) {
+      // Modo redefinir: valida o token antes de mostrar o formulário
+      document.getElementById('form-solicitar').hidden = true;
+      api.get('/api/recuperar-senha/validar?token=' + encodeURIComponent(token))
+        .then((r) => {
+          if (r.valido) {
+            document.getElementById('form-redefinir').hidden = false;
+          } else {
+            mostrarErro('Link inválido ou expirado. Solicite uma nova recuperação.');
+            document.getElementById('form-solicitar').hidden = false;
+          }
+        })
+        .catch(() => mostrarErro('Não foi possível validar o link.'));
+    }
+
+    document.getElementById('form-solicitar').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      try {
+        const r = await api.post('/api/recuperar-senha', {
+          identificador: document.getElementById('rec-id').value.trim(),
+        });
+        mostrarOk(r.mensagem);
+        ev.target.reset();
+      } catch (e) { mostrarErro('Informe um e-mail ou matrícula.'); }
+    });
+
+    document.getElementById('form-redefinir').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const s1 = document.getElementById('rec-senha').value;
+      const s2 = document.getElementById('rec-senha2').value;
+      if (s1 !== s2) return mostrarErro('As senhas não coincidem.');
+      try {
+        const r = await api.post('/api/redefinir-senha', { token, senha: s1 });
+        document.getElementById('form-redefinir').hidden = true;
+        mostrarOk(r.mensagem + ' Você já pode acessar o sistema.');
+      } catch (e) {
+        mostrarErro('Link inválido/expirado ou senha muito curta. Solicite um novo link.');
+      }
+    });
+  </script>
+</body>
+</html>

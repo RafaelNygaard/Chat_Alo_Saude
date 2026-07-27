@@ -151,6 +151,17 @@ class ConfigCabecalho(Base):
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
+class TokenRecuperacao(Base):
+    """Token de recuperação de senha. Guardado como hash; uso único e com prazo."""
+    __tablename__ = "tokens_recuperacao"
+    id = Column(Integer, primary_key=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    token_hash = Column(Text, nullable=False, unique=True)
+    expira_em = Column(DateTime(timezone=True), nullable=False)
+    usado_em = Column(DateTime(timezone=True))
+    criado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class TopicoCritico(Base):
     __tablename__ = "topicos_criticos"
     id = Column(Integer, primary_key=True)

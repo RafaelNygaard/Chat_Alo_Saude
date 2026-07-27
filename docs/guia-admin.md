@@ -15,6 +15,14 @@ Referência operacional do console técnico-administrativo (ADR-003).
 
 Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 
+### Recuperação de senha (autoatendimento)
+
+Qualquer usuário com e-mail cadastrado pode recuperar a senha em
+`/recuperar-senha` (link **"Esqueci minha senha"** nas telas de login). O sistema
+envia um link com token válido por 60 minutos e de **uso único**. Sem SMTP
+configurado, o link é registrado no log do servidor (ver runbook). O admin também
+pode redefinir diretamente em **Servidores → Editar → Senha** ou via `manage.py`.
+
 ## Módulos
 
 | Seção | O que faz |

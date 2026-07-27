@@ -21,6 +21,11 @@ def login():
     return render_template("login.html")
 
 
+@bp.get("/recuperar-senha")
+def recuperar_senha():
+    return render_template("recuperar.html")
+
+
 @bp.get("/admin")
 @admin_required
 def admin():

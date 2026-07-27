@@ -197,6 +197,20 @@ INSERT INTO config_cabecalho (id, logo_caminho) VALUES
     (1, '/static/img/logo-alo-saude.png');
 
 -- ---------------------------------------------------------------
+-- 14. tokens_recuperacao  (recuperação de senha; token guardado como hash)
+-- ---------------------------------------------------------------
+CREATE TABLE tokens_recuperacao (
+    id          SERIAL PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id),
+    token_hash  TEXT NOT NULL UNIQUE,     -- sha256 do token; nunca o token em claro
+    expira_em   TIMESTAMPTZ NOT NULL,
+    usado_em    TIMESTAMPTZ,
+    criado_em   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_tokens_recuperacao_usuario ON tokens_recuperacao (usuario_id);
+
+-- ---------------------------------------------------------------
 -- Palavras-chave de tópicos críticos (Decisão B: em tabela, não em código)
 -- ---------------------------------------------------------------
 CREATE TABLE topicos_criticos (

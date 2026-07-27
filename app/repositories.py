@@ -1,12 +1,16 @@
 """Repositórios: ponte entre orquestrador/handoff e o PostgreSQL."""
-from datetime import datetime
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, or_, text
+from werkzeug.security import generate_password_hash
 
 from app.db import Session
 from app.models import (
     AtendenteStatus, ConfigCabecalho, ConfigEncerramento, Conversa, FaqIntent,
-    Funcao, Handoff, Mensagem, PesquisaSatisfacao, TopicoCritico, UBS, Usuario,
+    Funcao, Handoff, Mensagem, PesquisaSatisfacao, TokenRecuperacao,
+    TopicoCritico, UBS, Usuario,
 )
 
 TEXTO_ENCERRAMENTO_PADRAO = (
@@ -113,6 +117,60 @@ def listar_funcoes() -> list[dict]:
 def listar_ubs() -> list[dict]:
     rows = Session.query(UBS).order_by(UBS.nome).all()
     return [{"id": u.id, "nome": u.nome, "municipio": u.municipio} for u in rows]
+
+
+# ------------------------------------------------------- recuperação de senha
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _expirado(dt: datetime) -> bool:
+    """Compara tratando datetime sem tzinfo como UTC (SQLite dos testes)."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt < datetime.now(timezone.utc)
+
+
+def usuario_por_identificador(identificador: str) -> Usuario | None:
+    return (
+        Session.query(Usuario)
+        .filter(or_(Usuario.email == identificador, Usuario.matricula == identificador))
+        .first()
+    )
+
+
+def criar_token_recuperacao(usuario_id: int, ttl_min: int = 60) -> str:
+    """Gera um token de uso único; guarda só o hash. Invalida os anteriores."""
+    Session.query(TokenRecuperacao).filter_by(usuario_id=usuario_id, usado_em=None).update(
+        {"usado_em": datetime.now(timezone.utc)}
+    )
+    token = secrets.token_urlsafe(32)
+    Session.add(TokenRecuperacao(
+        usuario_id=usuario_id,
+        token_hash=_hash_token(token),
+        expira_em=datetime.now(timezone.utc) + timedelta(minutes=ttl_min),
+    ))
+    Session.commit()
+    return token   # valor em claro só existe aqui e no link enviado
+
+
+def token_recuperacao_valido(token: str) -> TokenRecuperacao | None:
+    t = Session.query(TokenRecuperacao).filter_by(
+        token_hash=_hash_token(token), usado_em=None).first()
+    if t is None or _expirado(t.expira_em):
+        return None
+    return t
+
+
+def redefinir_senha_por_token(token: str, nova_senha: str) -> bool:
+    t = token_recuperacao_valido(token)
+    if t is None:
+        return False
+    usuario = Session.get(Usuario, t.usuario_id)
+    usuario.senha_hash = generate_password_hash(nova_senha)
+    t.usado_em = datetime.now(timezone.utc)   # consome (uso único)
+    Session.commit()
+    return True
 
 
 def autenticar_servidor(identificador: str, senha: str) -> tuple[Usuario | None, str | None]:

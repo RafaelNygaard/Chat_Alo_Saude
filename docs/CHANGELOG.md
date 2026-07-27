@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-27 (20) — Recuperação de senha
+
+- **Fluxo self-service** de redefinição por token, para qualquer usuário com
+  e-mail (servidores, atendentes, admins).
+- **Schema** (migration `007` + `schema.sql` + `models.py`): `tokens_recuperacao`
+  guarda **só o hash** do token (sha256); nunca o valor em claro.
+- **Backend**: `app/emailer.py` (smtplib; sem SMTP configurado, o link vai para o
+  log do servidor — modo dev); repositórios de token; endpoints
+  `POST /api/recuperar-senha`, `GET /api/recuperar-senha/validar`,
+  `POST /api/redefinir-senha`.
+- **Segurança**: token aleatório (`secrets.token_urlsafe`), **validade** (60 min,
+  `RECUPERACAO_TTL_MIN`), **uso único**, um novo pedido invalida o anterior, e
+  **resposta genérica** que não revela se o cadastro existe (sem enumeração).
+  Senha mínima de 6 caracteres.
+- **Frontend**: página `/recuperar-senha` (pedir link → redefinir com token) e
+  link **"Esqueci minha senha"** no login do admin e no modal do servidor.
+- **Config**: `APP_BASE_URL`, `RECUPERACAO_TTL_MIN` e `SMTP_*` no `.env`/`.env.example`.
+- Testes: `tests/test_recuperacao_senha.py` (10 casos) — **92 no total**.
+- Verificado no navegador: link no log → redefinição → login com a nova senha
+  (200), senha antiga (401), reutilização do token (400), resposta genérica igual
+  para usuário existente e inexistente.
+
+
+
 Registro cronológico de mudanças (mais recente primeiro). Formato inspirado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/). Cada entrada referencia os
 arquivos afetados. Datas em `AAAA-MM-DD`.
