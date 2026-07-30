@@ -14,6 +14,10 @@ dataset/
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 
+# Documentos de trabalho deixados na pasta do projeto (não versionar)
+/Texto Rafael Nygaard Rocha.odt
+/Texto Victor Hugo Manta Pontes.odt
+
 # ============================================================
 # Python
 # ============================================================
