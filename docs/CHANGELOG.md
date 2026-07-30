@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-30 (22) — Definição de senha só pelo fluxo "Esqueci minha senha"
+
+Ajuste de UX: a tela **"Defina uma nova senha"** deixa de aparecer no login. A
+troca/definição de senha passa a acontecer **apenas** pelo fluxo "Esqueci minha
+senha" (revê a "troca obrigatória no 1º acesso" da entrada 21).
+
+- **Login normal** (`/api/login` + telas de login do admin e do servidor): a
+  senha temporária passa a **autenticar como qualquer outra** e abre sessão
+  direto — sem forçar troca. Removidos os formulários de troca dos dois logins.
+- **Página `/recuperar-senha`** ganhou o **passo 2 — "Definir nova senha"**
+  (e-mail/matrícula + senha temporária + nova senha), usando `/api/trocar-senha`.
+  Agora a definição de senha vive inteiramente nessa página.
+- `schema.sql`: texto padrão do e-mail atualizado (não menciona mais troca
+  obrigatória no login).
+- Testes ajustados (login com senha temporária abre sessão) — **96 no total**.
+- Verificado no navegador: login com temporária entra direto (sem tela de troca);
+  a página "Esqueci minha senha" solicita a temporária e define a nova (temp
+  invalidada, flag limpa).
+
+
 ## 2026-07-27 (21) — Configuração de servidor de e-mail + recuperação por senha temporária
 
 Substitui o fluxo de token de recuperação (entrada 20) pelo modelo do mockup

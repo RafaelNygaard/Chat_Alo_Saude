@@ -14,7 +14,7 @@
   </div>
 
   <div class="login-tela">
-    <div class="login-card">
+    <div class="login-card" style="max-width:440px">
       <div class="marca">
         {% if cabecalho.logo %}
           <img class="logo-icone" src="{{ cabecalho.logo }}" alt="{{ cabecalho.titulo }}">
@@ -27,16 +27,38 @@
         </div>
       </div>
 
+      <!-- Passo 1: solicitar a senha temporária por e-mail -->
       <form id="form-solicitar">
-        <p class="modal-sub" style="margin:0">Informe seu e-mail ou matrícula. Enviaremos uma senha temporária, que deverá ser trocada no primeiro acesso.</p>
+        <p class="modal-sub" style="margin:0"><strong>1.</strong> Informe seu e-mail ou matrícula para receber uma senha temporária por e-mail.</p>
         <label>E-mail ou matrícula
           <input id="rec-id" type="text" required autocomplete="username">
         </label>
         <button class="btn" type="submit">Enviar senha temporária</button>
       </form>
-
       <p class="modal-erro" id="rec-erro" role="alert" hidden></p>
       <p id="rec-ok" style="background:var(--verde-claro);color:var(--verde);border-radius:6px;padding:.6rem .7rem;font-size:.85rem;font-weight:600" hidden></p>
+
+      <hr style="border:none;border-top:1px solid var(--cinza-borda);margin:.4rem 0">
+
+      <!-- Passo 2: definir a nova senha usando a temporária recebida -->
+      <form id="form-definir">
+        <p class="modal-sub" style="margin:0"><strong>2.</strong> Já recebeu a senha temporária? Defina sua nova senha.</p>
+        <label>E-mail ou matrícula
+          <input id="def-id" type="text" required autocomplete="username">
+        </label>
+        <label>Senha temporária (recebida por e-mail)
+          <input id="def-temp" type="password" required autocomplete="one-time-code">
+        </label>
+        <label>Nova senha
+          <input id="def-nova" type="password" required minlength="6" autocomplete="new-password">
+        </label>
+        <label>Confirmar nova senha
+          <input id="def-nova2" type="password" required minlength="6" autocomplete="new-password">
+        </label>
+        <button class="btn" type="submit">Definir nova senha</button>
+      </form>
+      <p class="modal-erro" id="def-erro" role="alert" hidden></p>
+      <p id="def-ok" style="background:var(--verde-claro);color:var(--verde);border-radius:6px;padding:.6rem .7rem;font-size:.85rem;font-weight:600" hidden></p>
 
       <a class="login-voltar" href="/login">← Voltar ao acesso</a>
     </div>
@@ -45,18 +67,39 @@
   <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
   <script>
     'use strict';
-    const erro = document.getElementById('rec-erro');
-    const ok = document.getElementById('rec-ok');
-    document.getElementById('form-solicitar').addEventListener('submit', async (ev) => {
+    const $ = (id) => document.getElementById(id);
+
+    // Passo 1 — solicitar senha temporária
+    $('form-solicitar').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      erro.hidden = true;
+      $('rec-erro').hidden = true; $('rec-ok').hidden = true;
       try {
-        const r = await api.post('/api/recuperar-senha', {
-          identificador: document.getElementById('rec-id').value.trim(),
+        const r = await api.post('/api/recuperar-senha', { identificador: $('rec-id').value.trim() });
+        $('rec-ok').textContent = r.mensagem; $('rec-ok').hidden = false;
+        if (!$('def-id').value) $('def-id').value = $('rec-id').value.trim();   // agiliza o passo 2
+      } catch (e) { $('rec-erro').textContent = 'Informe um e-mail ou matrícula.'; $('rec-erro').hidden = false; }
+    });
+
+    // Passo 2 — definir nova senha com a temporária
+    $('form-definir').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      $('def-erro').hidden = true; $('def-ok').hidden = true;
+      if ($('def-nova').value !== $('def-nova2').value) {
+        $('def-erro').textContent = 'As senhas não coincidem.'; $('def-erro').hidden = false; return;
+      }
+      try {
+        await api.post('/api/trocar-senha', {
+          identificador: $('def-id').value.trim(),
+          senha_atual: $('def-temp').value,
+          nova_senha: $('def-nova').value,
         });
-        ok.textContent = r.mensagem; ok.hidden = false;
-        ev.target.reset();
-      } catch (e) { erro.textContent = 'Informe um e-mail ou matrícula.'; erro.hidden = false; }
+        $('form-definir').reset();
+        $('def-ok').textContent = 'Senha definida com sucesso. Você já pode acessar o sistema.';
+        $('def-ok').hidden = false;
+      } catch (e) {
+        $('def-erro').textContent = 'Não foi possível definir a senha. Verifique a senha temporária e tente novamente.';
+        $('def-erro').hidden = false;
+      }
     });
   </script>
 </body>

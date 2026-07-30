@@ -229,45 +229,11 @@ el('form-login-servidor').addEventListener('submit', async (ev) => {
     return;
   }
   const s = await r.json();        // resposta já vem sem senha
-  if (s.senha_temporaria) {        // força a troca antes de entrar
-    el('form-login-servidor').hidden = true;
-    el('form-trocar-servidor').hidden = false;
-    el('troca-erro').hidden = true;
-    el('troca-nova').value = ''; el('troca-nova2').value = '';
-    el('troca-nova').focus();
-    return;
-  }
-  concluirLoginServidor(s);
-});
-
-function concluirLoginServidor(s) {
   salvarServidor(s);
   atualizarIdentidade();
   fecharLogin();
-  el('form-login-servidor').hidden = false;   // restaura para o próximo login
-  el('form-trocar-servidor').hidden = true;
   if (s.redirecionar) { location.href = s.redirecionar; return; }   // "Atendente chat"
-  carregarConversas();
-}
-
-el('form-trocar-servidor').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const te = el('troca-erro');
-  te.hidden = true;
-  const n1 = el('troca-nova').value, n2 = el('troca-nova2').value;
-  if (n1 !== n2) { te.textContent = 'As senhas não coincidem.'; te.hidden = false; return; }
-  const identificador = el('login-servidor-id').value.trim();
-  try {
-    await api.post('/api/trocar-senha', {
-      identificador, senha_atual: el('login-servidor-senha').value, nova_senha: n1,
-    });
-    // reautentica com a nova senha para obter a identidade final
-    const s = await api.post('/api/servidores/login', { identificador, senha: n1 });
-    concluirLoginServidor(s);
-  } catch (e) {
-    te.textContent = 'Não foi possível trocar a senha. Verifique os campos.';
-    te.hidden = false;
-  }
+  await carregarConversas();
 });
 
 // "Cadastrar usuário" leva o novo profissional ao popup de cadastro

@@ -69,12 +69,13 @@ def test_recuperar_sem_email_nao_gera_temporaria(client):
 
 
 # ------------------------------------------------- login + troca obrigatória
-def test_login_com_senha_temporaria_exige_troca(client):
+def test_login_com_senha_temporaria_entra_normalmente(client):
+    # A troca de senha acontece por "Esqueci minha senha", não no login:
+    # a senha temporária autentica e abre sessão como qualquer outra.
     temp = repo.gerar_senha_temporaria(Session.get(Usuario, 3))
     r = client.post("/api/login", json={"identificador": "adm@ex.com", "senha": temp})
-    assert r.status_code == 200 and r.get_json()["senha_temporaria"] is True
-    assert r.get_json().get("papel") is None          # não abre sessão ainda
-    assert client.get("/api/sessao").status_code == 401
+    assert r.status_code == 200 and r.get_json()["papel"] == "admin"
+    assert client.get("/api/sessao").status_code == 200   # sessão aberta
 
 
 def test_servidor_login_reporta_senha_temporaria(client):

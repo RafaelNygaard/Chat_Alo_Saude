@@ -37,79 +37,26 @@
       <a class="login-voltar" href="/recuperar-senha">Esqueci minha senha</a>
       <a class="login-voltar" href="/">← Voltar ao chat</a>
     </form>
-
-    <!-- Troca obrigatória quando a senha é temporária -->
-    <form class="login-card" id="form-trocar" hidden style="margin-top:0">
-      <div class="marca">
-        <div class="logo-icone sem-imagem" aria-hidden="true">🔒</div>
-        <div>
-          <div class="titulo"><strong>Defina uma nova senha</strong></div>
-          <div class="subtitulo">Sua senha é temporária</div>
-        </div>
-      </div>
-      <label>Nova senha
-        <input id="nova-senha" type="password" required minlength="6" autocomplete="new-password">
-      </label>
-      <label>Confirmar nova senha
-        <input id="nova-senha2" type="password" required minlength="6" autocomplete="new-password">
-      </label>
-      <p class="modal-erro" id="trocar-erro" role="alert" hidden></p>
-      <button class="btn" type="submit">Salvar e entrar</button>
-    </form>
   </div>
 
   <script src="{{ url_for('static', filename='js/comum.js') }}"></script>
   <script>
     'use strict';
     const proximo = new URLSearchParams(location.search).get('next');
-    const erro = document.getElementById('login-erro');
-
-    function entrar(s) {
-      location.href = proximo || (s.papel === 'admin'
-        ? '/admin' : `/atendente?atendente_id=${s.usuario_id}`);
-    }
-
     document.getElementById('form-login').addEventListener('submit', async (ev) => {
       ev.preventDefault();
+      const erro = document.getElementById('login-erro');
       erro.hidden = true;
       try {
         const s = await api.post('/api/login', {
           identificador: document.getElementById('login-id').value.trim(),
           senha: document.getElementById('login-senha').value,
         });
-        if (s.senha_temporaria) {   // não entra ainda: força a troca
-          document.getElementById('form-login').hidden = true;
-          document.getElementById('form-trocar').hidden = false;
-          document.getElementById('nova-senha').focus();
-        } else {
-          entrar(s);
-        }
+        location.href = proximo || (s.papel === 'admin'
+          ? '/admin' : `/atendente?atendente_id=${s.usuario_id}`);
       } catch (e) {
         erro.textContent = 'Credenciais inválidas ou sem acesso ao painel.';
         erro.hidden = false;
-      }
-    });
-
-    document.getElementById('form-trocar').addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      const te = document.getElementById('trocar-erro');
-      te.hidden = true;
-      const n1 = document.getElementById('nova-senha').value;
-      const n2 = document.getElementById('nova-senha2').value;
-      if (n1 !== n2) { te.textContent = 'As senhas não coincidem.'; te.hidden = false; return; }
-      try {
-        await api.post('/api/trocar-senha', {
-          identificador: document.getElementById('login-id').value.trim(),
-          senha_atual: document.getElementById('login-senha').value,   // a temporária
-          nova_senha: n1,
-        });
-        // já com a nova senha, faz o login definitivo
-        entrar(await api.post('/api/login', {
-          identificador: document.getElementById('login-id').value.trim(), senha: n1,
-        }));
-      } catch (e) {
-        te.textContent = 'Não foi possível trocar a senha. Verifique os campos.';
-        te.hidden = false;
       }
     });
   </script>

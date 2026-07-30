@@ -18,11 +18,13 @@ Redefinir senha: `python manage.py set-senha --email voce@... --senha NOVA`.
 ### Recuperação de senha (autoatendimento)
 
 Qualquer usuário com e-mail cadastrado pode recuperar a senha em
-`/recuperar-senha` (link **"Esqueci minha senha"** nas telas de login). O sistema
-gera uma **senha temporária**, envia por e-mail e **obriga a troca no primeiro
-acesso**. Sem SMTP configurado, a senha temporária é registrada no log do
-servidor (dev). O admin também pode redefinir em **Servidores → Editar → Senha**
-ou via `manage.py`.
+`/recuperar-senha` (link **"Esqueci minha senha"** nas telas de login), que tem
+dois passos: **1)** solicitar uma **senha temporária** (enviada por e-mail) e
+**2)** definir a nova senha informando a temporária. A senha temporária também
+funciona para **entrar direto** no login; a definição de uma senha própria é
+opcional e acontece só por esse fluxo. Sem SMTP configurado, a senha temporária
+é registrada no log do servidor (dev). O admin também pode redefinir em
+**Servidores → Editar → Senha** ou via `manage.py`.
 
 ### Configurações → Servidor de e-mail (só admin)
 

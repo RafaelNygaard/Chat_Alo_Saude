@@ -43,16 +43,13 @@ def login():
     if u.papel not in ("admin", "atendente"):
         return jsonify({"erro": "usuário sem acesso ao painel"}), 403
 
-    # Senha temporária: não abre sessão; o cliente força a troca antes de entrar.
-    if u.senha_temporaria:
-        return jsonify({"senha_temporaria": True, "usuario_id": u.id, "nome": u.nome})
-
+    # A definição de nova senha acontece pelo fluxo "Esqueci minha senha", não no
+    # login: a senha temporária entra normalmente (o usuário a troca em /recuperar-senha).
     session.clear()
     session["usuario_id"] = u.id
     session["papel"] = u.papel
     session["nome"] = u.nome
-    return jsonify({"usuario_id": u.id, "nome": u.nome, "papel": u.papel,
-                    "senha_temporaria": False})
+    return jsonify({"usuario_id": u.id, "nome": u.nome, "papel": u.papel})
 
 
 @bp.post("/logout")

@@ -211,7 +211,8 @@ CREATE TABLE config_email (
     corpo          TEXT NOT NULL DEFAULT
         E'Olá {{username}}!\n\nRecebemos um pedido para redefinir sua senha. '
         'Segue sua senha temporária: {{senha_temp}}\n\n'
-        'Ela deve ser trocada no primeiro acesso.\n\nEquipe Alô Saúde.',
+        'Use-a para acessar o sistema. Para definir uma senha própria, acesse '
+        '"Esqueci minha senha".\n\nEquipe Alô Saúde.',
     atualizado_em  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
