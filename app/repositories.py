@@ -57,7 +57,7 @@ CABECALHO_PADRAO = {
     "titulo": "Alô Saúde",
     "subtitulo": "Central de Apoio à Atenção Básica",
     "orgao": "Prefeitura de Poços de Caldas - SMS",
-    "cor_fundo": "#1351b4",
+    "cor_fundo": "#0c326f",
 }
 
 

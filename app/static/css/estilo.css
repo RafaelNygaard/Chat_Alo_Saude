@@ -1,6 +1,9 @@
-/* Identidade visual gov.br — fontes Inter (texto) e Outfit (títulos) */
+/* Identidade visual gov.br (Padrão Digital de Governo).
+   Tipografia: Rawline (fonte oficial), com sans-serif como fallback. */
 :root {
-  --azul-govbr: #1351b4;
+  --azul-brand: #0c326f;       /* Azul principal (marca) — gov.br */
+  --azul-interacao: #1351b4;   /* Links e botões ativos — gov.br */
+  --azul-govbr: #1351b4;       /* alias de interação (compatibilidade) */
   --azul-escuro: #071d41;
   --azul-claro: #e8f0fe;
   --amarelo: #ffcd07;
@@ -278,9 +281,20 @@ table.grade input, table.grade select { padding: .35rem .5rem; border: 1px solid
 .msg { max-width: 62%; padding: .7rem .9rem; border-radius: 10px; font-size: .9rem; line-height: 1.45; }
 .msg .autor { font-size: .72rem; font-weight: 600; margin-bottom: .25rem; color: var(--cinza-texto); }
 .msg .hora { font-size: .68rem; color: var(--cinza-texto); margin-top: .3rem; text-align: right; }
-.msg-usuario { align-self: flex-end; background: var(--azul-govbr); color: var(--branco); }
+.msg-usuario { align-self: flex-end; background: var(--azul-interacao); color: var(--branco); }
 .msg-usuario .autor, .msg-usuario .hora { color: rgba(255,255,255,.8); }
-.msg-bot { align-self: flex-start; background: var(--azul-claro); }
+/* Bot (gov.br DS): fundo branco, borda sutil e avatar oficial do assistente */
+.msg-bot {
+  align-self: flex-start; background: var(--branco);
+  border: 1px solid var(--cinza-borda); position: relative; margin-left: 2.6rem;
+}
+.msg-bot::before {
+  content: ""; position: absolute; left: -2.6rem; top: 0;
+  width: 2rem; height: 2rem; border-radius: 50%;
+  border: 1px solid var(--cinza-borda);
+  background: var(--branco) var(--avatar-bot, none) center / 74% no-repeat;
+}
+body.alto-contraste .msg-bot::before { border-color: #000; }
 .msg-atendente { align-self: flex-start; background: var(--branco); border: 1px solid var(--cinza-borda); }
 
 /* Divisor de sistema (handoff) */

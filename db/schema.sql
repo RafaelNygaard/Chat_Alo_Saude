@@ -190,7 +190,7 @@ CREATE TABLE config_cabecalho (
     titulo        TEXT NOT NULL DEFAULT 'Alô Saúde',
     subtitulo     TEXT NOT NULL DEFAULT 'Central de Apoio à Atenção Básica',
     orgao         TEXT NOT NULL DEFAULT 'Prefeitura de Poços de Caldas - SMS',
-    cor_fundo     TEXT NOT NULL DEFAULT '#1351b4',
+    cor_fundo     TEXT NOT NULL DEFAULT '#0c326f',  -- azul brand gov.br
     atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

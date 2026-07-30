@@ -148,7 +148,7 @@ class ConfigCabecalho(Base):
     titulo = Column(Text, nullable=False, default="Alô Saúde")
     subtitulo = Column(Text, nullable=False, default="Central de Apoio à Atenção Básica")
     orgao = Column(Text, nullable=False, default="Prefeitura de Poços de Caldas - SMS")
-    cor_fundo = Column(Text, nullable=False, default="#1351b4")
+    cor_fundo = Column(Text, nullable=False, default="#0c326f")  # azul brand gov.br
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 

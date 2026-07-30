@@ -134,7 +134,7 @@
     </aside>
 
     <!-- Chat -->
-    <main class="chat" aria-live="polite">
+    <main class="chat">
       <div class="chat-cabecalho" id="chat-cabecalho" hidden>
         <div class="linha">
           <h2 class="titulo" id="chat-assunto"></h2>
@@ -144,7 +144,8 @@
         <div class="protocolo" id="chat-protocolo"></div>
       </div>
 
-      <div class="mensagens" id="mensagens">
+      <div class="mensagens" id="mensagens" role="log" aria-live="polite" aria-relevant="additions"
+           style="--avatar-bot: {% if cabecalho.logo %}url('{{ cabecalho.logo }}'){% else %}none{% endif %}">
         <div class="vazio" id="vazio">
           <h3 class="titulo">Bem-vindo(a) ao Alô Saúde</h3>
           <p>Selecione um atendimento ou inicie um novo.</p>
@@ -159,10 +160,10 @@
         <button class="btn" type="submit" aria-label="Enviar">&#10148;</button>
       </form>
 
-      <div class="rodape">
+      <footer class="rodape">
         <span>Comunicação protegida · LGPD · RNDS</span>
         <span>Shift+Enter para nova linha</span>
-      </div>
+      </footer>
     </main>
   </div>
 
