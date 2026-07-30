@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Alô Saúde — Central de Apoio à Atenção Básica</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
 </head>
 <body>
@@ -126,8 +124,8 @@
     <!-- Sidebar -->
     <aside class="sidebar" aria-label="Meus atendimentos">
       <div class="acoes">
-        <input class="busca" id="busca" type="search" placeholder="Buscar atendimentos..." aria-label="Buscar atendimentos">
-        <button class="btn" id="btn-novo">&#128172; Novo Atendimento</button>
+        <input class="busca br-input" id="busca" type="search" placeholder="Buscar atendimentos..." aria-label="Buscar atendimentos">
+        <button class="btn br-button" id="btn-novo">&#128172; Novo Atendimento</button>
       </div>
       <div class="rotulo">MEUS ATENDIMENTOS</div>
       <ul class="lista-conversas" id="lista-conversas"></ul>
@@ -157,7 +155,7 @@
       <form class="entrada" id="form-entrada" hidden>
         <textarea id="campo-texto" placeholder="Digite sua mensagem... (Enter para enviar)"
                   aria-label="Mensagem"></textarea>
-        <button class="btn" type="submit" aria-label="Enviar">&#10148;</button>
+        <button class="btn br-button" type="submit" aria-label="Enviar">&#10148;</button>
       </form>
 
       <footer class="rodape">

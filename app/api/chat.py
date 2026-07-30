@@ -5,7 +5,7 @@ import time
 from flask import Blueprint, Response, current_app, jsonify, request, stream_with_context
 
 from app import repositories as repo
-from app.models import Conversa, FaqIntent, Mensagem
+from app.models import Conversa, FaqIntent, FeedbackMensagem, Mensagem
 from app.nlp.rules_engine import RulesEngine
 from app.orchestrator.handoff import HandoffManager
 from app.orchestrator.orchestrator import EstadoConversa, Orquestrador
@@ -114,6 +114,21 @@ def listar_conversas():
          "criada_em": c.criada_em.isoformat()}
         for c in q.all()
     ])
+
+
+@bp.post("/mensagens/<int:mensagem_id>/feedback")
+def feedback_mensagem(mensagem_id: int):
+    """Feedback Útil/Não útil de uma resposta do bot (gov.br DS). Um por mensagem."""
+    util = bool(request.get_json(force=True).get("util"))
+    if Session.get(Mensagem, mensagem_id) is None:
+        return jsonify({"erro": "mensagem não encontrada"}), 404
+    fb = Session.query(FeedbackMensagem).filter_by(mensagem_id=mensagem_id).first()
+    if fb is None:
+        fb = FeedbackMensagem(mensagem_id=mensagem_id)
+        Session.add(fb)
+    fb.util = util
+    Session.commit()
+    return jsonify({"ok": True, "util": util})
 
 
 @bp.get("/chips")

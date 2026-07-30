@@ -1,0 +1,11 @@
+Fonte oficial gov.br (Rawline) — auto-hospedada.
+
+Coloque aqui os arquivos:
+  rawline-400.woff2  (Regular)
+  rawline-600.woff2  (SemiBold)
+  rawline-700.woff2  (Bold)
+
+Fonte: Design System gov.br (https://www.gov.br/ds/). Sem estes arquivos, a
+aplicação usa o fallback sans-serif (permitido pelo DESING.md). Os @font-face
+já estão declarados em app/static/css/estilo.css — a Rawline ativa sozinha
+assim que os .woff2 estiverem presentes.

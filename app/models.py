@@ -152,6 +152,15 @@ class ConfigCabecalho(Base):
     atualizado_em = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
+class FeedbackMensagem(Base):
+    """Feedback Útil/Não útil de uma resposta do bot (gov.br DS)."""
+    __tablename__ = "feedback_mensagens"
+    id = Column(Integer, primary_key=True)
+    mensagem_id = Column(Integer, ForeignKey("mensagens.id"), nullable=False, unique=True)
+    util = Column(Boolean, nullable=False)
+    criada_em = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class ConfigEmail(Base):
     """Linha única (id=1): SMTP + modelo do e-mail de recuperação.
 

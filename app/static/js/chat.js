@@ -71,6 +71,36 @@ async function carregarConversas(filtro = '') {
 
 el('busca').addEventListener('input', (ev) => carregarConversas(ev.target.value.trim().toLowerCase()));
 
+// --------------------------------------------- feedback do bot (gov.br DS)
+
+/** Renderiza a mensagem e, se for do bot, anexa o feedback "Útil/Não útil". */
+function criarMsgChat(m) {
+  const bolha = criarMsgEl(m);
+  if (m.autor === 'bot' && m.id) anexarFeedback(bolha, m.id);
+  return bolha;
+}
+
+function anexarFeedback(bolha, mensagemId) {
+  const fb = document.createElement('div');
+  fb.className = 'feedback';
+  const rotulo = document.createElement('span');
+  rotulo.textContent = 'Esta resposta foi útil?';
+  fb.appendChild(rotulo);
+  const criar = (texto, util) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'br-button feedback-btn';
+    b.textContent = texto;
+    b.addEventListener('click', async () => {
+      try { await api.post(`/api/mensagens/${mensagemId}/feedback`, { util }); } catch (e) { /* silencioso */ }
+      fb.textContent = 'Obrigado pelo feedback!';
+    });
+    return b;
+  };
+  fb.append(criar('\u{1F44D} Útil', true), criar('\u{1F44E} Não útil', false));
+  bolha.appendChild(fb);
+}
+
 // ---------------------------------------------------------------- conversa
 
 async function abrirConversa(c) {
@@ -88,7 +118,7 @@ async function abrirConversa(c) {
   mensagensEl.innerHTML = '';
   afterRef.valor = 0;
   const msgs = await api.get(`/api/conversas/${c.id}/mensagens`);
-  msgs.forEach((m) => { mensagensEl.appendChild(criarMsgEl(m)); afterRef.valor = Math.max(afterRef.valor, m.id); });
+  msgs.forEach((m) => { mensagensEl.appendChild(criarMsgChat(m)); afterRef.valor = Math.max(afterRef.valor, m.id); });
   if (c.status_ui === 'Encerrado') {
     try { mostrarEncerramento(await api.get('/api/encerramento')); } catch (e) { /* card é opcional */ }
   }
@@ -98,7 +128,7 @@ async function abrirConversa(c) {
     onMensagem: (m) => {
       removerTyping();
       confirmarEco(m);   // remove o eco otimista, se a mensagem for a própria
-      mensagensEl.appendChild(criarMsgEl(m));
+      mensagensEl.appendChild(criarMsgChat(m));
       rolarParaFim();
     },
     onStatus: (s) => {

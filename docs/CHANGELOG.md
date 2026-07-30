@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-07-30 (23) — Padronização gov.br do chat (Padrão Digital de Governo)
+
+Conforme `docs/DESING.md`. A stack já era conforme (HTML/CSS/JS vanilla, sem
+frameworks de UI, Flask + PostgreSQL, Fetch/JSON); o trabalho foi acabamento
+visual e componentes.
+
+**Fase 1 — cores, semântica, acessibilidade, avatar**
+- Tokens gov.br: `--azul-brand #0c326f`, `--azul-interacao #1351b4`.
+- Bolha do bot: fundo branco + borda + **avatar do assistente** (logo do órgão,
+  via `--avatar-bot`). Mensagem do usuário à direita (azul de interação).
+- Área de mensagens com `role="log"` + `aria-live="polite"`; rodapé vira
+  `<footer>`. Header brand por padrão (a cor segue configurável no admin).
+
+**Fase 2 — fonte Rawline (auto-hospedada)**
+- `@font-face` da **Rawline** declarado; stack `"Rawline", sans-serif`; removidos
+  os Google Fonts (Inter/Outfit). Os `.woff2` oficiais não estão acessíveis por
+  CDN pública, então ficam pendentes: colocar em `app/static/fonts/rawline/`
+  (ver `LEIA-ME.txt`). Sem eles, usa o fallback `sans-serif` (permitido pelo
+  DESING.md) — a Rawline ativa sozinha quando os arquivos existirem.
+
+**Fase 3 — componentes ricos + classes `.br-*`**
+- **Feedback "Útil / Não útil"** nas respostas do bot: `feedback_mensagens`
+  (migration `009`), `POST /api/mensagens/<id>/feedback` (um por mensagem),
+  botões no chat que registram e agradecem.
+- Classes gov.br **`.br-button`/`.br-input`** aplicadas aos controles do chat
+  (aliás dos componentes atuais, sem quebra).
+
+- Testes: `tests/test_feedback_mensagem.py` — **99 no total**.
+- Verificado no navegador: bolha branca com avatar, feedback persistindo no banco,
+  fallback de fonte correto (`Rawline, "Segoe UI", sans-serif`).
+
+**Divergências mantidas de propósito** (documentadas na análise de viabilidade):
+o JSON de mensagens usa nosso contrato real (`autor/handoff/gatilho/…`, mais rico
+que `text/intent/confidence/actions`) por causa do orquestrador + fila humana; e
+persistência via SQLAlchemy (sobre psycopg2), não SQL cru.
+
+
 ## 2026-07-30 (22) — Definição de senha só pelo fluxo "Esqueci minha senha"
 
 Ajuste de UX: a tela **"Defina uma nova senha"** deixa de aparecer no login. A

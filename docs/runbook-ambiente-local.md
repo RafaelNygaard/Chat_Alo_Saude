@@ -47,6 +47,7 @@ $env:PGPASSWORD='senha'
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\006_config_cabecalho.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\007_recuperacao_senha.sql
 & $psql -U alosaude -h localhost -d alosaude -f db\migrations\008_config_email_senha_temporaria.sql
+& $psql -U alosaude -h localhost -d alosaude -f db\migrations\009_feedback_mensagens.sql
 ```
 
 > Nota: `schema.sql` já inclui a tabela `funcoes` e as colunas novas de

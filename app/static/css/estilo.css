@@ -17,10 +17,20 @@
   --texto: #333;
 }
 
+/* Fonte oficial gov.br — Rawline (auto-hospedada). Coloque os .woff2 em
+   app/static/fonts/rawline/. Sem os arquivos, usa o fallback sans-serif
+   (permitido pelo DESING.md). font-display:swap evita tela invisível. */
+@font-face { font-family: "Rawline"; font-weight: 400; font-display: swap;
+  src: url("/static/fonts/rawline/rawline-400.woff2") format("woff2"); }
+@font-face { font-family: "Rawline"; font-weight: 600; font-display: swap;
+  src: url("/static/fonts/rawline/rawline-600.woff2") format("woff2"); }
+@font-face { font-family: "Rawline"; font-weight: 700; font-display: swap;
+  src: url("/static/fonts/rawline/rawline-700.woff2") format("woff2"); }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: "Rawline", "Segoe UI", sans-serif;
   color: var(--texto);
   background: var(--cinza-claro);
   height: 100vh;
@@ -28,7 +38,7 @@ body {
   flex-direction: column;
 }
 
-h1, h2, h3, .titulo { font-family: "Outfit", sans-serif; }
+h1, h2, h3, .titulo { font-family: "Rawline", sans-serif; }
 
 /* Alto contraste (acessibilidade) */
 body.alto-contraste {
@@ -151,7 +161,7 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
   border: 1px solid var(--cinza-borda);
 }
 .cartao-encerramento .texto {
-  font-family: "Outfit", sans-serif; font-size: 1.05rem; font-weight: 600;
+  font-family: "Rawline", sans-serif; font-size: 1.05rem; font-weight: 600;
   white-space: pre-wrap; word-break: break-word;
 }
 .cartao-encerramento img.ilustracao {
@@ -201,7 +211,7 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
   background: var(--branco); border: 1px solid var(--cinza-borda); border-radius: 10px;
   padding: 1rem 1.3rem; min-width: 140px;
 }
-.card .valor { font-family: "Outfit", sans-serif; font-size: 1.8rem; color: var(--azul-govbr); font-weight: 700; }
+.card .valor { font-family: "Rawline", sans-serif; font-size: 1.8rem; color: var(--azul-govbr); font-weight: 700; }
 .card .rotulo { font-size: .8rem; color: var(--cinza-texto); }
 
 table.grade { width: 100%; border-collapse: collapse; background: var(--branco);
@@ -233,18 +243,35 @@ table.grade input, table.grade select { padding: .35rem .5rem; border: 1px solid
   display: flex; flex-direction: column;
 }
 .sidebar .acoes { padding: 1rem; display: flex; flex-direction: column; gap: .6rem; }
-.busca {
+/* Componentes gov.br DS: .br-input e .br-button (nomes-padrão do Design System) */
+.busca, .br-input {
   width: 100%; padding: .55rem .8rem;
   border: 1px solid var(--cinza-borda); border-radius: 6px;
   font-family: inherit;
 }
-.btn {
-  background: var(--azul-govbr); color: var(--branco);
+.br-input:focus { outline: 2px solid var(--azul-interacao); border-color: var(--azul-interacao); }
+.btn, .br-button {
+  background: var(--azul-interacao); color: var(--branco);
   border: none; border-radius: 6px; padding: .6rem 1rem;
   font-family: inherit; font-weight: 600; cursor: pointer;
 }
-.btn:hover { filter: brightness(1.1); }
-.btn.secundario { background: var(--branco); color: var(--azul-govbr); border: 1px solid var(--azul-govbr); }
+.btn:hover, .br-button:hover { filter: brightness(1.1); }
+.btn.secundario, .br-button.secundario {
+  background: var(--branco); color: var(--azul-interacao); border: 1px solid var(--azul-interacao);
+}
+
+/* Feedback "Útil / Não útil" nas respostas do bot (gov.br DS) */
+.feedback {
+  margin-top: .55rem; padding-top: .45rem; border-top: 1px solid var(--cinza-borda);
+  display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
+  font-size: .74rem; color: var(--cinza-texto);
+}
+.feedback-btn {
+  background: var(--branco); color: var(--azul-interacao);
+  border: 1px solid var(--cinza-borda); padding: .2rem .55rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 600;
+}
+.feedback-btn:hover { filter: none; border-color: var(--azul-interacao); background: var(--azul-claro); }
 .sidebar .rotulo {
   font-size: .72rem; font-weight: 700; color: var(--cinza-texto);
   letter-spacing: .05em; padding: .4rem 1rem;

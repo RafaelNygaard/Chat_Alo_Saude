@@ -219,6 +219,16 @@ CREATE TABLE config_email (
 INSERT INTO config_email (id) VALUES (1);
 
 -- ---------------------------------------------------------------
+-- 15. feedback_mensagens  (Útil/Não útil por resposta do bot — gov.br DS)
+-- ---------------------------------------------------------------
+CREATE TABLE feedback_mensagens (
+    id          SERIAL PRIMARY KEY,
+    mensagem_id INTEGER NOT NULL UNIQUE REFERENCES mensagens(id),
+    util        BOOLEAN NOT NULL,
+    criada_em   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------
 -- Palavras-chave de tópicos críticos (Decisão B: em tabela, não em código)
 -- ---------------------------------------------------------------
 CREATE TABLE topicos_criticos (
