@@ -18,6 +18,9 @@ app/static/uploads/*
 /Texto Rafael Nygaard Rocha.odt
 /Texto Victor Hugo Manta Pontes.odt
 
+# Arquivos de lock do LibreOffice (abertos ao editar .odt)
+.~lock.*#
+
 # ============================================================
 # Python
 # ============================================================
