@@ -271,21 +271,91 @@ def topicos_remover(tid):
 
 
 # =============================================================== Atendentes
+def _atendente_json(u: Usuario) -> dict:
+    st = Session.get(AtendenteStatus, u.id)
+    return {"id": u.id, "nome": u.nome, "email": u.email, "matricula": u.matricula,
+            "ubs_id": u.ubs_id, "ubs_nome": u.ubs.nome if u.ubs else None,
+            "tem_senha": bool(u.senha_hash),
+            "status": st.status if st else "ausente"}
+
+
+def _atendente_ou_404(aid: int) -> Usuario | None:
+    u = Session.get(Usuario, aid)
+    return u if u is not None and u.papel == "atendente" else None
+
+
 @bp.get("/admin/atendentes")
 @admin_required
 def atendentes_listar():
     rows = (
-        Session.query(Usuario, AtendenteStatus)
-        .outerjoin(AtendenteStatus, AtendenteStatus.atendente_id == Usuario.id)
+        Session.query(Usuario)
         .filter(Usuario.papel == "atendente")
         .order_by(Usuario.nome)
         .all()
     )
-    return jsonify([
-        {"id": u.id, "nome": u.nome, "email": u.email,
-         "status": (s.status if s else "ausente")}
-        for u, s in rows
-    ])
+    return jsonify([_atendente_json(u) for u in rows])
+
+
+@bp.post("/admin/atendentes")
+@admin_required
+def atendentes_criar():
+    d = request.get_json(force=True)
+    nome = (d.get("nome") or "").strip()
+    if not nome:
+        return jsonify({"erro": "nome obrigatório"}), 400
+    matricula = (d.get("matricula") or "").strip() or None
+    if matricula and Session.query(Usuario).filter_by(matricula=matricula).first():
+        return jsonify({"erro": "matrícula já cadastrada"}), 409
+    u = Usuario(nome=nome, email=(d.get("email") or "").strip() or None,
+                matricula=matricula, papel="atendente", ubs_id=d.get("ubs_id"))
+    if d.get("senha"):
+        u.senha_hash = generate_password_hash(d["senha"])
+    Session.add(u)
+    Session.flush()   # obtém o id
+    Session.add(AtendenteStatus(atendente_id=u.id, status="ausente"))
+    Session.commit()
+    return jsonify(_atendente_json(u)), 201
+
+
+@bp.put("/admin/atendentes/<int:aid>")
+@admin_required
+def atendentes_editar(aid):
+    u = _atendente_ou_404(aid)
+    if u is None:
+        return jsonify({"erro": "atendente não encontrado"}), 404
+    d = request.get_json(force=True)
+    if d.get("nome") and d["nome"].strip():
+        u.nome = d["nome"].strip()
+    if "email" in d:
+        u.email = (d["email"] or "").strip() or None
+    if "matricula" in d:
+        nova = (d["matricula"] or "").strip() or None
+        if nova and nova != u.matricula and Session.query(Usuario).filter_by(matricula=nova).first():
+            return jsonify({"erro": "matrícula já cadastrada"}), 409
+        u.matricula = nova
+    if "ubs_id" in d:
+        u.ubs_id = d["ubs_id"]
+    if d.get("senha"):
+        u.senha_hash = generate_password_hash(d["senha"])
+    Session.commit()
+    return jsonify(_atendente_json(u))
+
+
+@bp.delete("/admin/atendentes/<int:aid>")
+@admin_required
+def atendentes_remover(aid):
+    u = _atendente_ou_404(aid)
+    if u is None:
+        return jsonify({"erro": "atendente não encontrado"}), 404
+    if Session.query(Conversa).filter_by(atendente_id=aid).first():
+        return jsonify({"erro": "atendente possui atendimentos vinculados e "
+                                "não pode ser excluído"}), 409
+    st = Session.get(AtendenteStatus, aid)
+    if st is not None:
+        Session.delete(st)
+    Session.delete(u)
+    Session.commit()
+    return jsonify({"ok": True})
 
 
 @bp.post("/admin/atendentes/<int:aid>/status")

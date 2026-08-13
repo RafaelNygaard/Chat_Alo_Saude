@@ -130,21 +130,22 @@ async function renderServidores() {
       h('h3', { class: 'titulo', style: 'margin-bottom:.6rem' }, u ? `Editar: ${u.nome}` : 'Novo usuário'),
       linha('Nome', nome), linha('E-mail', email), linha('Matrícula', matricula),
       linha('Papel', papel), linha('Função', funcao), linha('Unidade', ubs), linha('Senha', senha),
-      h('button', {
-        class: 'btn mini', onclick: async () => {
-          const corpo = {
-            nome: nome.value.trim(), email: email.value.trim(), matricula: matricula.value.trim(),
-            papel: papel.value, funcao_id: Number(funcao.value) || null, ubs_id: Number(ubs.value) || null,
-          };
-          if (senha.value) corpo.senha = senha.value;
-          try {
-            if (u) await api.put(`/api/admin/usuarios/${u.id}`, corpo);
-            else await api.post('/api/admin/usuarios', corpo);
-            box.remove(); carregar();
-          } catch (e) { aviso('Falha ao salvar usuário.'); }
-        }
-      }, 'Salvar'),
-      h('button', { class: 'btn mini secundario', style: 'margin-left:.5rem', onclick: () => box.remove() }, 'Cancelar'));
+      h('div', { class: 'form-acoes' },
+        h('button', {
+          class: 'btn mini', onclick: async () => {
+            const corpo = {
+              nome: nome.value.trim(), email: email.value.trim(), matricula: matricula.value.trim(),
+              papel: papel.value, funcao_id: Number(funcao.value) || null, ubs_id: Number(ubs.value) || null,
+            };
+            if (senha.value) corpo.senha = senha.value;
+            try {
+              if (u) await api.put(`/api/admin/usuarios/${u.id}`, corpo);
+              else await api.post('/api/admin/usuarios', corpo);
+              box.remove(); carregar();
+            } catch (e) { aviso('Falha ao salvar usuário.'); }
+          }
+        }, 'Salvar'),
+        h('button', { class: 'btn mini secundario', onclick: () => box.remove() }, 'Cancelar')));
     alvo.prepend(box);
   }
 
@@ -152,7 +153,7 @@ async function renderServidores() {
 }
 
 function linha(rot, campo) {
-  return h('label', { style: 'display:flex;flex-direction:column;font-size:.78rem;font-weight:600;color:var(--azul-escuro);gap:.2rem;margin-bottom:.5rem' }, rot, campo);
+  return h('label', { class: 'campo-form' }, rot, campo);
 }
 
 // -------------------------------------------------------------- Funções
@@ -233,17 +234,18 @@ async function renderIntents() {
       h('h3', { class: 'titulo', style: 'margin-bottom:.6rem' }, i ? `Editar: ${i.intent}` : 'Novo intent'),
       linha('Intent (id único)', intent), linha('Chip (opcional)', chip),
       linha('Padrões (uma frase por linha)', padroes), linha('Resposta', resposta),
-      h('button', {
-        class: 'btn mini', onclick: async () => {
-          const corpo = { chip_label: chip.value.trim(), padroes: padroes.value, resposta: resposta.value };
-          try {
-            if (i) await api.put(`/api/admin/intents/${i.id}`, corpo);
-            else await api.post('/api/admin/intents', { intent: intent.value.trim(), ...corpo });
-            box.remove(); carregar();
-          } catch (e) { aviso('Falha ao salvar intent (verifique campos/duplicidade).'); }
-        }
-      }, 'Salvar'),
-      h('button', { class: 'btn mini secundario', style: 'margin-left:.5rem', onclick: () => box.remove() }, 'Cancelar'));
+      h('div', { class: 'form-acoes' },
+        h('button', {
+          class: 'btn mini', onclick: async () => {
+            const corpo = { chip_label: chip.value.trim(), padroes: padroes.value, resposta: resposta.value };
+            try {
+              if (i) await api.put(`/api/admin/intents/${i.id}`, corpo);
+              else await api.post('/api/admin/intents', { intent: intent.value.trim(), ...corpo });
+              box.remove(); carregar();
+            } catch (e) { aviso('Falha ao salvar intent (verifique campos/duplicidade).'); }
+          }
+        }, 'Salvar'),
+        h('button', { class: 'btn mini secundario', onclick: () => box.remove() }, 'Cancelar')));
     alvo.prepend(box);
   }
   carregar();
@@ -461,19 +463,77 @@ async function renderEncerramento() {
 // -------------------------------------------------------------- Atendentes
 async function renderAtendentes() {
   main.innerHTML = '';
+  await carregarRefs();   // ubsRef para o combo de unidade
   main.append(h('h2', { class: 'titulo' }, 'Atendentes'));
+  main.append(h('div', { class: 'admin-toolbar' },
+    h('button', { class: 'btn mini', onclick: () => form() }, '+ Novo atendente')));
   const alvo = h('div'); main.append(alvo);
+
   async function carregar() {
     const as = await api.get('/api/admin/atendentes');
-    const t = h('table', { class: 'grade' }, h('tr', {}, ...['Nome', 'E-mail', 'Disponibilidade', ''].map((c) => h('th', {}, c))));
-    if (!as.length) t.append(h('tr', {}, h('td', { colspan: '4' }, 'Nenhum atendente cadastrado (crie em Servidores com papel "atendente").')));
+    const t = h('table', { class: 'grade' },
+      h('tr', {}, ...['Nome', 'E-mail', 'Matrícula', 'Unidade', 'Login', 'Disponibilidade', ''].map((c) => h('th', {}, c))));
+    if (!as.length) t.append(h('tr', {}, h('td', { colspan: '7' }, 'Nenhum atendente cadastrado.')));
     as.forEach((a) => {
       const sel = h('select', {}, ...['disponivel', 'ocupado', 'ausente'].map((s) => h('option', { value: s, selected: a.status === s ? '' : null }, s)));
-      sel.addEventListener('change', async () => { await api.post(`/api/admin/atendentes/${a.id}/status`, { status: sel.value }); });
-      t.append(h('tr', {}, h('td', {}, a.nome), h('td', {}, a.email || '—'), h('td', {}, sel), h('td', {})));
+      sel.addEventListener('change', async () => {
+        try { await api.post(`/api/admin/atendentes/${a.id}/status`, { status: sel.value }); }
+        catch (e) { aviso('Falha ao alterar disponibilidade.'); }
+      });
+      t.append(h('tr', {},
+        h('td', {}, a.nome), h('td', {}, a.email || '—'), h('td', {}, a.matricula || '—'),
+        h('td', {}, a.ubs_nome || '—'), h('td', {}, a.tem_senha ? 'sim' : '—'),
+        h('td', {}, sel),
+        h('td', {},
+          h('button', { class: 'btn mini secundario', onclick: () => form(a) }, 'Editar'),
+          h('button', {
+            class: 'btn mini secundario', style: 'margin-left:.3rem',
+            onclick: () => remover(a),
+          }, 'Excluir'))));
     });
     alvo.innerHTML = ''; alvo.append(t);
   }
+
+  async function remover(a) {
+    if (!confirm(`Excluir o atendente "${a.nome}"?`)) return;
+    try { await api.del(`/api/admin/atendentes/${a.id}`); carregar(); }
+    catch (e) {
+      // 409: possui atendimentos vinculados
+      aviso('Não foi possível excluir: o atendente possui atendimentos vinculados. '
+            + 'Deixe-o como "ausente" em vez de excluir.');
+    }
+  }
+
+  function form(a = null) {
+    const nome = h('input', { type: 'text', value: a?.nome || '' });
+    const email = h('input', { type: 'email', value: a?.email || '' });
+    const matricula = h('input', { type: 'text', value: a?.matricula || '' });
+    const ubs = h('select', {}, h('option', { value: '' }, '—'),
+      ...ubsRef.map((b) => h('option', { value: b.id, selected: a?.ubs_id === b.id ? '' : null }, b.nome)));
+    const senha = h('input', { type: 'password', placeholder: a ? '(inalterada)' : 'senha p/ login' });
+    const box = h('div', { style: 'background:#fff;border:1px solid var(--cinza-borda);border-radius:8px;padding:1rem;margin-bottom:1rem;max-width:640px' },
+      h('h3', { class: 'titulo', style: 'margin-bottom:.6rem' }, a ? `Editar: ${a.nome}` : 'Novo atendente'),
+      linha('Nome', nome), linha('E-mail', email), linha('Matrícula', matricula),
+      linha('Unidade', ubs), linha('Senha', senha),
+      h('div', { class: 'form-acoes' },
+        h('button', {
+          class: 'btn mini', onclick: async () => {
+            const corpo = {
+              nome: nome.value.trim(), email: email.value.trim(),
+              matricula: matricula.value.trim(), ubs_id: Number(ubs.value) || null,
+            };
+            if (senha.value) corpo.senha = senha.value;
+            try {
+              if (a) await api.put(`/api/admin/atendentes/${a.id}`, corpo);
+              else await api.post('/api/admin/atendentes', corpo);
+              box.remove(); carregar();
+            } catch (e) { aviso('Falha ao salvar (nome obrigatório; matrícula não pode repetir).'); }
+          }
+        }, 'Salvar'),
+        h('button', { class: 'btn mini secundario', onclick: () => box.remove() }, 'Cancelar')));
+    alvo.prepend(box);
+  }
+
   carregar();
 }
 

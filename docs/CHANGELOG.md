@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-30 (24) — CRUD de atendentes + melhoria de design dos formulários admin
+
+- **Operação → Atendentes** vira um **CRUD completo**: criar, editar, excluir e
+  ajustar disponibilidade. Endpoints `POST/PUT/DELETE /api/admin/atendentes`
+  (criar já provisiona `atendentes_status`; excluir é **bloqueado (409)** se o
+  atendente tiver atendimentos vinculados — oriente a deixá-lo "ausente").
+  Listagem passou a trazer matrícula, unidade e se tem login.
+- **Design dos formulários do admin** (global): campos gerados por `linha()`
+  ganharam a classe `.campo-form` (padding, borda, foco gov.br, mais respiro);
+  botões de ação das tabelas (Editar/Excluir) ficam **lado a lado** (célula
+  `nowrap`, alinhados à direita); Salvar/Cancelar agrupados em uma barra
+  `.form-acoes` com separador. Aplicado a Atendentes, Servidores e Intents.
+- Testes: `tests/test_atendentes_crud.py` (9 casos) — **108 no total**.
+- Verificado no navegador: criar → editar → status → excluir; bloqueio de
+  exclusão com atendimentos; campos e botões alinhados.
+
+
 ## 2026-07-30 (23) — Padronização gov.br do chat (Padrão Digital de Governo)
 
 Conforme `docs/DESING.md`. A stack já era conforme (HTML/CSS/JS vanilla, sem

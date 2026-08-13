@@ -217,11 +217,29 @@ body.alto-contraste .msg-usuario { border: 2px solid #fff; }
 table.grade { width: 100%; border-collapse: collapse; background: var(--branco);
   border: 1px solid var(--cinza-borda); border-radius: 8px; overflow: hidden; }
 table.grade th, table.grade td { padding: .6rem .8rem; text-align: left; font-size: .88rem;
-  border-bottom: 1px solid var(--cinza-borda); }
+  border-bottom: 1px solid var(--cinza-borda); vertical-align: middle; }
 table.grade th { background: var(--cinza-claro); font-weight: 600; color: var(--azul-escuro); }
 table.grade tr:last-child td { border-bottom: none; }
 table.grade input, table.grade select { padding: .35rem .5rem; border: 1px solid var(--cinza-borda);
   border-radius: 5px; font: inherit; font-size: .85rem; }
+/* Coluna de ações: botões lado a lado, sem quebrar linha */
+table.grade td:last-child { white-space: nowrap; text-align: right; }
+table.grade td:last-child .btn.mini + .btn.mini { margin-left: .4rem; }
+
+/* Campos de formulário do admin (gerados por linha()) — gov.br */
+.campo-form { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem;
+  font-size: .8rem; font-weight: 600; color: var(--azul-escuro); }
+.campo-form input, .campo-form select, .campo-form textarea {
+  width: 100%; padding: .55rem .7rem; font: inherit; font-size: .9rem; font-weight: 400;
+  color: var(--texto); background: var(--branco);
+  border: 1px solid var(--cinza-borda); border-radius: 6px;
+}
+.campo-form input:focus, .campo-form select:focus, .campo-form textarea:focus {
+  outline: 2px solid var(--azul-interacao); border-color: var(--azul-interacao);
+}
+/* Barra de ações do formulário (Salvar / Cancelar) alinhada e espaçada */
+.form-acoes { display: flex; gap: .6rem; margin-top: 1.1rem; padding-top: .9rem;
+  border-top: 1px solid var(--cinza-borda); }
 
 .admin-toolbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: end; margin-bottom: 1rem; }
 .admin-toolbar label { font-size: .78rem; font-weight: 600; color: var(--azul-escuro); display: flex;
