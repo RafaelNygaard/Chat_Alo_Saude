@@ -163,6 +163,31 @@ def usuarios_editar(uid):
     return jsonify(_usuario_json(u))
 
 
+@bp.delete("/admin/usuarios/<int:uid>")
+@admin_required
+def usuarios_remover(uid):
+    from flask import session
+    u = Session.get(Usuario, uid)
+    if u is None:
+        return jsonify({"erro": "não encontrado"}), 404
+    if uid == session.get("usuario_id"):
+        return jsonify({"erro": "você não pode excluir o próprio usuário"}), 409
+    vinculado = (
+        Session.query(Conversa)
+        .filter((Conversa.usuario_id == uid) | (Conversa.atendente_id == uid))
+        .first()
+    )
+    if vinculado is not None:
+        return jsonify({"erro": "usuário possui atendimentos vinculados e "
+                                "não pode ser excluído"}), 409
+    st = Session.get(AtendenteStatus, uid)
+    if st is not None:
+        Session.delete(st)
+    Session.delete(u)
+    Session.commit()
+    return jsonify({"ok": True})
+
+
 # ============================================================ Bot: faq_intents
 def _intent_json(i: FaqIntent) -> dict:
     return {"id": i.id, "intent": i.intent, "padroes": i.padroes,

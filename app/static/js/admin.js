@@ -113,9 +113,23 @@ async function renderServidores() {
       h('td', {}, u.nome), h('td', {}, u.email || '—'), h('td', {}, u.matricula || '—'),
       h('td', {}, u.papel), h('td', {}, nomePor(funcoesRef, u.funcao_id)),
       h('td', {}, nomePor(ubsRef, u.ubs_id)), h('td', {}, u.tem_senha ? 'sim' : '—'),
-      h('td', {}, h('button', { class: 'btn mini secundario', onclick: () => formUsuario(u) }, 'Editar')))));
+      h('td', {},
+        h('button', { class: 'btn mini secundario', onclick: () => formUsuario(u) }, 'Editar'),
+        h('button', {
+          class: 'btn mini secundario', style: 'margin-left:.3rem',
+          onclick: () => removerUsuario(u),
+        }, 'Excluir')))));
     alvo.innerHTML = '';
     alvo.append(t);
+  }
+
+  async function removerUsuario(u) {
+    if (!confirm(`Excluir o usuário "${u.nome}"?`)) return;
+    try { await api.del(`/api/admin/usuarios/${u.id}`); carregar(); }
+    catch (e) {
+      aviso('Não foi possível excluir: o usuário possui atendimentos vinculados '
+            + '(ou é o seu próprio usuário).');
+    }
   }
 
   function formUsuario(u = null) {

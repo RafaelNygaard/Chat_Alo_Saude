@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-30 (25) — Excluir usuário em Cadastros → Servidores
+
+- Botão **Excluir** ao lado de **Editar** na tabela de Servidores.
+- `DELETE /api/admin/usuarios/<id>` com proteções: **409** se o usuário tiver
+  atendimentos vinculados (como servidor **ou** atendente) e **409** se for o
+  próprio usuário logado (evita autoexclusão); remove o `atendentes_status`
+  quando existir.
+- Testes: `tests/test_usuarios_delete.py` (7 casos) — **115 no total**.
+- Verificado no navegador: exclusão sem vínculos, bloqueio com atendimentos e
+  bloqueio de autoexclusão.
+
+
 ## 2026-07-30 (24) — CRUD de atendentes + melhoria de design dos formulários admin
 
 - **Operação → Atendentes** vira um **CRUD completo**: criar, editar, excluir e
